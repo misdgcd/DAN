@@ -63,6 +63,9 @@ export default function SalesOrder() {
   };
 
   const [showWindow, setShowWindow] = useState(false);
+  const [showDoc, setShowDoc] = useState(false);
+
+  // 
 
   const toggleShowWindow = () => {
     setShowWindow(!showWindow);
@@ -72,6 +75,11 @@ export default function SalesOrder() {
     setTableData((prevData) => prevData.filter((_, index) => index !== rowIndex));
   };
 
+
+  const handleShowDoc = () => {
+    setShowDoc(!showDoc);
+  }
+
   return (
     <>
       <div className="salesbody p-2 text-sm rounded-md flex gap-40  container overflow-x-auto rounded-lg">
@@ -79,8 +87,33 @@ export default function SalesOrder() {
           <div className="grid grid-cols-2"> 
             <label htmlFor="documentnumber">Document Number</label>
             <div>
-              <input type="text"/>
+              <input type="text"/> <button className="w-[20px]  bg-slate-200" onClick={handleShowDoc}>=</button>
             </div>
+
+            {/* Document Number */}
+            {
+              showDoc && (
+                <Draggable>
+                  <div className="w-[400px] h-[100px] bg-white shadow-lg" style={{ 
+                    border: '1px solid #ccc', 
+                    position: 'absolute', 
+                    left: '30%',
+                  }}  >
+                  <div className="grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
+                    <div>
+                      Document Number
+                    </div>
+                    <div className="text-right">
+                      <span onClick={handleShowDoc} className="cursor-pointer">❌</span>
+                    </div>
+                  </div>
+                  <div className="content">
+                  </div>
+                </div>
+              </Draggable>
+              )
+            }
+
           </div>
           <div className="grid grid-cols-2">
             <label htmlFor="documentnumber">Draft Number</label>
@@ -119,7 +152,7 @@ export default function SalesOrder() {
             </div>
           </div>
         </div>
-        <div className="w-[] flex flex-wrap gap-5 col1">
+        <div className="w-[] flex flex-wrap gap-5 col1 mr-3">
           <div>
             <div className="grid grid-cols-2">
               <label htmlFor="entrynumber">Customer Code</label>
@@ -180,7 +213,7 @@ export default function SalesOrder() {
           </div>
         </div>
       </div>
-      <div className="fields mt-2 rounded-md text-left container bg-white overflow-x-auto shadow-xl">
+      <div className="fields mt-2 rounded-md text-left container bg-white overflow-x-auto shadow-xl p-2">
       <table>
       
         <thead className="tables">
@@ -227,9 +260,70 @@ export default function SalesOrder() {
           ))}
         </tbody>
       </table>
-      <button onClick={handleAddRow} className="p-1 mt-1 mb-1 text-[12px] ml-1 bg-[#F4D674]"><span>+</span> Add Row</button>
+      <button onClick={handleAddRow} className="p-1 mt-2 mb-1 text-[12px] bg-[#F4D674]"><span>+</span> Add Row</button>
       </div>
-      
+      <div className="text-left p-2 grid grid-cols-2 col1 text-[14px] mt-5">
+          <div className="w-[300px] ">
+            <div className="grid grid-cols-2">
+              <label htmlFor="documentnumber">Mode of Payment</label>
+              <div>
+                <input type="text" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2">
+              <label htmlFor="documentnumber">Mode of Releasing</label>
+              <div>
+                <input type="text" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2">
+              <label htmlFor="documentnumber">Sales Crew</label>
+              <div>
+                <input type="text" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2">
+              <label htmlFor="documentnumber">Remarks</label>
+              <div>
+                <textarea name="" id="" cols="30" rows="10"></textarea>
+              </div>
+            </div>
+            <div className="grid grid-cols-2">
+              <label htmlFor="documentnumber">Sales Crew</label>
+              <div>
+                <input type="text" />
+              </div>
+            </div>
+          </div>
+          <div className="text-right w-full grid justify-end">  
+            <div className="w-[440px] ">
+              <div className="grid grid-cols-2 text-right">
+                <label htmlFor="documentnumber" className="text-right">Total Amount Before VAT</label>
+                <div>
+                  <input type="text" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2">
+                <label htmlFor="documentnumber">Total VAT</label>
+                <div>
+                  <input type="text" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2">
+                <label htmlFor="documentnumber">Total After VAT</label>
+                <div>
+                  <input type="text" />
+                </div>
+              </div>
+            </div>
+        
+          </div>
+      </div>
+      <div className="p-2 flex justify-start">
+        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Add</button> 
+        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Search</button> 
+        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Print</button>
+      </div>
       {
         // <div className="text-left">
         //   <pre>{JSON.stringify(tableData, null, 2)}</pre>

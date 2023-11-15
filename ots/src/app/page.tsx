@@ -52,11 +52,11 @@ export default function Home() {
 
   const toggleWindow = (e: any) => {
     if(e === 'salesqoutation') {
-      setShowSalesOrder(false);
-      setShowSalesOrder(!showSalesOrder);
-    }else if(e === 'salesorder') {
       setShowSalesQoutation(false);
       setShowSalesQoutation(!showSalesQoutation);
+    }else if(e === 'salesorder') {
+      setShowSalesOrder(false);
+      setShowSalesOrder(!showSalesOrder);
     } 
   }
 
@@ -232,21 +232,23 @@ export default function Home() {
       <div className='w-full overflow-auto'>
         <div className="body w-[100%] bg-red-50 h-screen overflow-auto">
         
-        {showSalesQoutation && (
+        {showSalesOrder  && (
             <Draggable handle=".header" onDrag={handleDrag} >
             <div className="container bg-white" style={{ 
-            border: '1px solid #ccc', 
-            position: 'absolute', 
-            zIndex: 2,
-            top: '5%',
-            left: '15%',
-            transform: 'translate(-50%, -50%)', }}  >
-              <div className="header grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
-                <div>
+                border: '1px solid #ccc', 
+                position: 'absolute', 
+                zIndex: 2,
+                top: '10%',
+                left: '15%',
+                transform: 'translate(-50%, -50%)',
+                borderBottom: 'solid 2px #F0AB00' 
+              }}  >
+              <div className="header grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move', borderBottom: 'solid 2px #F0AB00'  }}>
+                <div className="" >
                   Sales Order Header
                 </div>
-                <div>
-                  s
+                <div className="text-right">
+                  <span className="text-md text-red-600 cursor-pointer" onClick={()=> toggleWindow('salesorder')}>❌</span>
                 </div>
               </div>
               <div className="content">
@@ -258,23 +260,32 @@ export default function Home() {
           </Draggable>
         )}
 
-{showSalesOrder && (
+      {showSalesQoutation && (
          <Draggable handle=".header" onDrag={handleDrag} >
 
-            <div className="container" style={{ border: '1px solid #ccc', position: 'absolute', zIndex: 1 }} >
-              <div className="header" style={{ cursor: 'move' }}>
+            <div className="container bg-white" style={{ 
+                border: '1px solid #ccc', 
+                position: 'absolute', 
+                zIndex: 2,
+                top: '50%',
+                left: '10%',
+                transform: 'translate(-50%, -50%)' 
+              }}  >
+              <div className="header grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
                 <div>
                   Sales Order Header
                 </div>
                 <div>
-                  sss
+                  
                 </div>
               </div>
-              <div  className=" bg-white container text-left SalesOrderDiv">
-                
+              <div className="content">
+                {/* Rest of your Sales Order content */}
+                {/* ... */}
+                <SalesOrder />
               </div>
             </div>
-            s
+            
           </Draggable>
         )}
 
