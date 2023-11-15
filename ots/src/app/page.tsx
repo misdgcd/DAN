@@ -34,6 +34,9 @@ export default function Home() {
   const [spanName4, setSpanName4] = useState('');
 
 
+  // Z-index
+ 
+
   // Window
 
   const [showSalesOrder, setShowSalesOrder] = useState(false);
@@ -57,8 +60,11 @@ export default function Home() {
     } 
   }
 
-  
-  
+  const handleDrag = (e, ui) => {
+    // You can add custom logic here if needed
+    console.log('Dragging...', ui);
+  };
+
 
   // End Of Declaration
 
@@ -223,25 +229,53 @@ export default function Home() {
             </div>
           </div>
       </div>
-      <div className='w-full'>
-        <div className="body w-[100%] bg-red-50 h-screen ">
-        {showSalesOrder && (
-          
-            <div style={{
-            }} className=" bg-white container text-left SalesOrderDiv">
-              <SalesOrder />
+      <div className='w-full overflow-auto'>
+        <div className="body w-[100%] bg-red-50 h-screen overflow-auto">
+        
+        {showSalesQoutation && (
+            <Draggable handle=".header" onDrag={handleDrag} >
+            <div className="container bg-white" style={{ 
+            border: '1px solid #ccc', 
+            position: 'absolute', 
+            zIndex: 2,
+            top: '5%',
+            left: '15%',
+            transform: 'translate(-50%, -50%)', }}  >
+              <div className="header grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
+                <div>
+                  Sales Order Header
+                </div>
+                <div>
+                  s
+                </div>
+              </div>
+              <div className="content">
+                {/* Rest of your Sales Order content */}
+                {/* ... */}
+                <SalesOrder />
+              </div>
             </div>
-          
+          </Draggable>
         )}
 
-        {showSalesQoutation && (
-            <Draggable>
-              <div style={{
-              height: '100vh',
-            }} className=" bg-white container text-left SalesOrderDiv">
-              <SalesQoutation />
+{showSalesOrder && (
+         <Draggable handle=".header" onDrag={handleDrag} >
+
+            <div className="container" style={{ border: '1px solid #ccc', position: 'absolute', zIndex: 1 }} >
+              <div className="header" style={{ cursor: 'move' }}>
+                <div>
+                  Sales Order Header
+                </div>
+                <div>
+                  sss
+                </div>
+              </div>
+              <div  className=" bg-white container text-left SalesOrderDiv">
+                
+              </div>
             </div>
-            </Draggable>
+            s
+          </Draggable>
         )}
 
 

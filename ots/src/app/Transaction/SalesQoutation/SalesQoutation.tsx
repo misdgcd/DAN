@@ -28,10 +28,7 @@ export default function SalesQoutation() {
         {showWindow && (
           <Draggable >
             <div style={{
-            position: 'absolute',
-            top: '5%',
-            left: '15%',
-            transform: 'translate(-50%, -50%)',
+            
           }} className=" bg-white container text-left SalesOrderDiv">
               <div className="p-1 float cursor-move grid grid-cols-2">
                 <div>Items</div>

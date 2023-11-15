@@ -269,3 +269,9 @@ th, tr, td{
   height: 23px;
   border: solid 1px rgb(129, 129, 129);
 }
+
+/* Global CSS */
+
+.windowheader{
+  background-color: #CBD5E1;
+}

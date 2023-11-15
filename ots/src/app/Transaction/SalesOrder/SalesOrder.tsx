@@ -74,9 +74,6 @@ export default function SalesOrder() {
 
   return (
     <>
-      <div className="salesQoutation container ">
-        <h1 className="text-[15px] p-2">Sales Order</h1>
-      </div>
       <div className="salesbody p-2 text-sm rounded-md flex gap-40  container overflow-x-auto rounded-lg">
         <div className="w-[] col1">
           <div className="grid grid-cols-2"> 
@@ -232,29 +229,11 @@ export default function SalesOrder() {
       </table>
       <button onClick={handleAddRow} className="p-1 mt-1 mb-1 text-[12px] ml-1 bg-[#F4D674]"><span>+</span> Add Row</button>
       </div>
-      <button onClick={toggleShowWindow}>Show Window</button>
+      
       {
-        showWindow && (
-          <Draggable>
-            <div className="bg-white p-2 rounded-md shadow-xl">
-              sample hehe
-            </div>
-          </Draggable>
-        )
-      }
-      {
-        showWindow && (
-          <Draggable>
-            <div className="bg-white p-2 rounded-md shadow-xl">
-              sample hehe
-            </div>
-          </Draggable>
-        )
-      }
-      {
-        <div className="text-left">
-          <pre>{JSON.stringify(tableData, null, 2)}</pre>
-        </div>
+        // <div className="text-left">
+        //   <pre>{JSON.stringify(tableData, null, 2)}</pre>
+        // </div>
       }
     </>
   );
