@@ -394,7 +394,7 @@ export default function SalesOrder() {
               </div>
             </div>
             <div className="grid grid-cols-2">
-              <label htmlFor="entrynumber">Customer Name</label>
+              <label htmlFor="entrynumber">Customer Name.</label>
               <div>
                 <input type="text"  value={customerData.map((e)=>e.customerName)} className="bg-slate-200" readOnly/>
               </div>
