@@ -203,7 +203,7 @@ th, tr, td{
 }
 
 
-.tables th{
+.tables th, td{
   white-space: nowrap;
   font-weight: 400;
 }
@@ -285,4 +285,16 @@ textarea{
 
 .windowheader{
   background-color: #CBD5E1;
+}
+
+
+/* Customer Data */
+
+.tdcus:hover{
+  background-color: #F0AB00;
+  cursor: pointer;
+}
+
+.trcus:hover{
+  background-color: #e0e0e0;
 }

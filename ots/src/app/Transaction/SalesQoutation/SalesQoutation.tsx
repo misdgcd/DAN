@@ -2,7 +2,6 @@
 import Data from "../../Data/Data.json"
 import React, { useState } from 'react';
 import Draggable from 'react-draggable';
-import { Resizable } from 'react-resizable';
 
 export default function SalesQoutation() {
 
