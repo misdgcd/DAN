@@ -436,16 +436,17 @@ export default function SalesOrder() {
     );
   }).slice(0, 50);
 
-  const handleUOM = (rowindex: any, BaseQty: any) => {
+  const handleUOM = (rowindex: any, BaseQty: any, UomCode: any) => {
     const updatedTableData = [...tableData];
     const item = updatedTableData[UOMListIndex];
 
     updatedTableData[UOMListIndex] = {
       ...item,
       uomConversion: BaseQty,
+      uom: UomCode,
       sellingPriceBeforeDiscount: item.price * BaseQty,
-      sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount * BaseQty,
-      grossTotal: (item.sellingPriceBeforeDiscount * BaseQty) * item.quantity
+      sellingPriceAfterDiscount: item.price * BaseQty,
+      grossTotal: (item.price * BaseQty) * item.quantity
       // Other calculations if needed
     };
     setTableData(updatedTableData);
@@ -504,7 +505,7 @@ export default function SalesOrder() {
                                 </thead>
                                 <tbody>
 
-                                  {filteredData.map((rowData, rowIndex) => (
+                                  {filteredData.map((rowData: any, rowIndex) => (
                                     <tr className="trcus" key={rowIndex}>
                                       <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.CardCode}</td>
                                       <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.CardName}</td>
@@ -921,10 +922,10 @@ export default function SalesOrder() {
                           {UOMList.map((e, rowIndex)=>(
                             // eslint-disable-next-line react/jsx-key
                             <tr className="trcus cursor-pointer">
-                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty)}>
+                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty, e.UomCode)}>
                                   {e.UomCode}
                               </td>
-                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty)}>
+                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty, e.UomCode)}>
                                   {e.BaseQty}
                               </td>
                             </tr>
