@@ -10,6 +10,36 @@ import axios from "axios";
 
 export default function SalesOrder() {
 
+  const [customerList, setCustomerDataList] = useState([]);
+  const [itemList, setItemDataList] = useState([]);
+  const [UOMList, setUOMList] = useState([]);
+  const [UOMListIndex, setUOMListIndex] = useState([]);
+
+  const onAddHeader = async () => {
+    const customers = await axios.get(`${process.env.NEXT_PUBLIC_IP}/customer`);
+    setCustomerDataList(customers.data);
+    console.log("customer", customers.data)
+  };
+
+  const onAddheaderItems = async () => {
+    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/GSCNAPGS`);
+    setItemDataList(item.data);
+    console.log("items", item.data)
+  };
+  
+  const onAddHeaderUOM = async (itemcode: any, rowIndex: any) => {
+    const uom = await axios.get(`${process.env.NEXT_PUBLIC_IP}/uom/${itemcode}`);
+    setUOMList(uom.data);
+    setUOMListIndex(rowIndex);
+    console.log("uom", uom.data, "rowindex", rowIndex)
+  };
+
+  useEffect(()=>{
+    onAddHeader();
+    onAddheaderItems();
+  }, []);
+
+
   const [tableData, setTableData] = useState([
     {
       itemCode: '',
@@ -18,14 +48,15 @@ export default function SalesOrder() {
       uom: '',
       uomConversion: '',
       location: '',
+      price: 0,
       inventoryStatus: '',
       sellingPriceBeforeDiscount: 0,
       discountRate: 0,
       sellingPriceAfterDiscount: 0,
       lowerBound: '',
       taxCode: '',
-      taxCodePercentage: '',
-      taxAmount: '',
+      taxCodePercentage: 12,
+      taxAmount: 0,
       modeOfReleasing: '',
       scPwdDiscount: '',
       grossTotal: 0,
@@ -40,14 +71,11 @@ export default function SalesOrder() {
     console.log(value)
   };
 
-  const onAddHeader = async () => {
-      // const item = await axios.post(`${process.env.NEXT_PUBLIC_IP}/item`);
-      // setAddItemModalALert(true);
-      // console.log(item.data);
-      // setOpen(false);
-  };
+ 
+  
 
   const handleAddRow = (rowIndex: any, fieldName: any) => {
+    // onAddHeader;
     setTableData(prevData => [
       ...prevData,
       {
@@ -56,15 +84,16 @@ export default function SalesOrder() {
         quantity: '',
         uom: '',
         uomConversion: '',
-        location: '',
+        location: 'GSCNAPGS',
+        price: 0,
         inventoryStatus: '',
         sellingPriceBeforeDiscount: 0,
         discountRate: 0,
         sellingPriceAfterDiscount: 0,
         lowerBound: '',
         taxCode: '',
-        taxCodePercentage: '',
-        taxAmount: '',
+        taxCodePercentage: 12,
+        taxAmount: 0,
         modeOfReleasing: '',
         scPwdDiscount: '',
         grossTotal: 0,
@@ -74,6 +103,7 @@ export default function SalesOrder() {
 
 
     onAddHeader();
+    onAddheaderItems();
 
 
   };
@@ -87,49 +117,23 @@ export default function SalesOrder() {
     {
       customerCode: '00000',
       customerName: 'N/A',
+      customerCardFName: '',
       cusShipAddress: 'N/A',
-      cusTIN: 'N/A'
+      cusLicTradNum: 'N/A'
     }
   ]);
 
   let customerData2 = [{}];
 
-  let currentCustomerData = [
-    {
-      customerCode: 'C1001',
-      customerName: 'John Doe',
-      cusShipAddress: '123 Main Street, Cityville',
-      cusTIN: '1234567890'
-    },
-    {
-      customerCode: 'C1002',
-      customerName: 'Jane Smith',
-      cusShipAddress: '456 Oak Avenue, Townsville',
-      cusTIN: '0987654321'
-    },
-    {
-      customerCode: 'C1003',
-      customerName: 'Alice Johnson',
-      cusShipAddress: '789 Elm Road, Villageton',
-      cusTIN: '1357924680'
-    },
-    {
-      customerCode: 'C1004',
-      customerName: 'Bob Anderson',
-      cusShipAddress: '321 Cedar Lane, Hamletville',
-      cusTIN: '2468013579'
-    },
-    {
-      customerCode: 'C1005',
-      customerName: 'Eva Garcia',
-      cusShipAddress: '567 Pine Street, Suburbia',
-      cusTIN: '9876543210'
-    }
-  ];
+  let currentCustomerData = customerList;
 
 
   
   // Search Table
+
+  const arrayCustomer = [
+    customerList
+  ]
 
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -138,22 +142,26 @@ export default function SalesOrder() {
     setSearchTerm(event.target.value);
   };
 
-  const filteredData = currentCustomerData.filter((rowData) => {
+  const filteredData = currentCustomerData
+  .filter((rowData) => {
     return (
       Object.values(rowData).some((value) =>
+        value !== null &&
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
-  });
+  })
+  .slice(0, 20);
 
 
-  const addCustomerData = (id:any, name:any, address:any, tin:any) => {
+  const addCustomerData = (id:any, name:any, fname:any, address:any, tin:any) => {
     
     let newArray  = {
       customerCode: id,
       customerName: name,
+      customerCardFName: fname,
       cusShipAddress: address,
-      cusTIN: tin
+      cusLicTradNum: tin
     }
 
     setCustomerData([
@@ -201,13 +209,14 @@ export default function SalesOrder() {
       uom: '',
       uomConversion: '',
       location: '',
+      price: 0,
       inventoryStatus: '',
       sellingPriceBeforeDiscount: '',
       discountRate: '',
       sellingPriceAfterDiscount: '',
       lowerBound: '',
       taxCode: '',
-      taxCodePercentage: '',
+      taxCodePercentage: '12',
       taxAmount: '',
       modeOfReleasing: '',
       scPwdDiscount: '',
@@ -237,6 +246,7 @@ export default function SalesOrder() {
 
   const handleShowCustomer = () => {
     setShowCustomer(!showCustomer);
+    onAddHeader();
   }
 
   const openConsole = () => {
@@ -297,6 +307,8 @@ export default function SalesOrder() {
 
   sum();
 
+
+  const [itemCodeForUOM, setItemCodeForUOM] = useState('');
   
 
   const openItemTable = (rowIndex: any) => {
@@ -304,9 +316,12 @@ export default function SalesOrder() {
     setSelectedRowIndex(rowIndex);
   }
 
-  const openOUMTable = (rowIndex: any) => {
+  const openOUMTable = (rowIndex: any, itemCode: any) => {
     setOpenOUMPanel(!openOUMPanel);
     setSelectedRowIndex(rowIndex);
+    console.log("itemcode", itemCode)
+    setItemCodeForUOM(itemCode);
+    onAddHeaderUOM(itemCode, rowIndex);
   }
 
   const openLocationTable = (rowIndex: any) => {
@@ -319,14 +334,18 @@ export default function SalesOrder() {
       const updatedTableData = [...tableData];
       updatedTableData[selectedRowIndex] = {
         ...updatedTableData[selectedRowIndex],
-        itemCode: item.itemCode,
-        itemName: item.itemName,
+        itemCode: item.ItemCode,
+        itemName: item.ItemName,
         quantity: 1,
         discountRate: 0,
-        sellingPriceBeforeDiscount: item.sellingPrice,
-        sellingPriceAfterDiscount: item.sellingPrice,
-        uom: 'Box',
-        grossTotal: item.sellingPrice
+        uom: item.UomCode,
+        location: 'GSCNAPGS',
+        price: item.Price,
+        uomConversion: item.NumInSale,
+        sellingPriceBeforeDiscount: item.Price,
+        sellingPriceAfterDiscount: item.Price,
+        taxAmount: item.Price * 0.12,
+        grossTotal: item.Price
         // Update other fields based on item data, e.g., price, tax, etc.
       };
       setTableData(updatedTableData);
@@ -374,7 +393,8 @@ export default function SalesOrder() {
     updatedTableData[rowIndex] = {
       ...item,
       quantity,
-      grossTotal: quantity * item.sellingPriceAfterDiscount
+      grossTotal: quantity * item.sellingPriceAfterDiscount,
+      taxAmount: (quantity * item.sellingPriceAfterDiscount) * 0.12
       // Other calculations if needed
     };
     setTableData(updatedTableData);
@@ -407,15 +427,32 @@ export default function SalesOrder() {
     setSearchTerm(event.target.value);
   };
 
-  const filteredDataItem = itemdatalist.filter((rowData) => {
+  const filteredDataItem = itemList.filter((rowData) => {
     return (
       Object.values(rowData).some((value) =>
+        value !== null &&
         value.toString().toLowerCase().includes(searchTerm.toLowerCase())
       )
     );
-  }).slice(0, 10);
+  }).slice(0, 50);
 
+  const handleUOM = (rowindex: any, BaseQty: any) => {
+    const updatedTableData = [...tableData];
+    const item = updatedTableData[UOMListIndex];
 
+    updatedTableData[UOMListIndex] = {
+      ...item,
+      uomConversion: BaseQty,
+      sellingPriceBeforeDiscount: item.price * BaseQty,
+      sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount * BaseQty,
+      grossTotal: (item.sellingPriceBeforeDiscount * BaseQty) * item.quantity
+      // Other calculations if needed
+    };
+    setTableData(updatedTableData);
+
+    console.log(rowindex, BaseQty, UOMListIndex, item)
+
+  }
 
 
   return (
@@ -460,16 +497,20 @@ export default function SalesOrder() {
                                   <tr>
                                     <th>Customer Code</th>
                                     <th>Name</th>
+                                    <th>Foreign Name</th>
                                     <th>Shipping Address</th>
+                                    <th>LicTradNum</th>
                                   </tr>
                                 </thead>
                                 <tbody>
 
                                   {filteredData.map((rowData, rowIndex) => (
                                     <tr className="trcus" key={rowIndex}>
-                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.customerCode, rowData.customerName, rowData.cusShipAddress, rowData.cusTIN)}>{rowData.customerCode}</td>
-                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.customerCode, rowData.customerName, rowData.cusShipAddress, rowData.cusTIN)}>{rowData.customerName}</td>
-                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.customerCode, rowData.customerName, rowData.cusShipAddress, rowData.cusTIN)}>{rowData.cusShipAddress}</td>
+                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.CardCode}</td>
+                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.CardName}</td>
+                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.CardFName}</td>
+                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.Address}</td>
+                                      <td className="tdcus" onClick={()=>addCustomerData(rowData.CardCode, rowData.CardName, rowData.CardFName, rowData.Address, rowData.LicTradNum)}>{rowData.LicTradNum}</td>
                                       {/* {Object.values(rowData).map((value, colIndex) => (
                                         <td className="tdcus" key={colIndex} onClick={()=>addCustomerData(rowData.customerCode, rowData.customerName, rowData.cusShipAddress, rowData.cusTIN)} >{value}</td>
                                       ))} */}
@@ -486,9 +527,15 @@ export default function SalesOrder() {
               </div>
             </div>
             <div className="grid grid-cols-2">
-              <label htmlFor="entrynumber">Customer Name.</label>
+              <label htmlFor="entrynumber">Customer Name</label>
               <div>
                 <input type="text"  value={customerData.map((e)=>e.customerName)} className="bg-slate-200" readOnly/>
+              </div>
+            </div>
+            <div className="grid grid-cols-2">
+              <label className="" htmlFor="entrynumber">Foreign Name</label>
+              <div>
+                <input type="text" value={customerData.map((e)=>e.customerCardFName)} readOnly/>
               </div>
             </div>
             <div className="grid grid-cols-2">
@@ -506,9 +553,13 @@ export default function SalesOrder() {
             <div className="grid grid-cols-2">
               <label className="" htmlFor="entrynumber">Customer TIN</label>
               <div>
-                <input type="text" value={customerData.map((e)=>e.cusTIN)} />
+                <input type="text" value={customerData.map((e)=>e.cusLicTradNum)} />
               </div>
             </div>
+            
+            
+          </div>
+          <div>
             <div className="grid grid-cols-2">
               <label className="" htmlFor="entrynumber">Customer Reference</label>
               <div>
@@ -521,8 +572,6 @@ export default function SalesOrder() {
                 <input type="text" readOnly/>
               </div>
             </div>
-          </div>
-          <div>
             <div className="grid grid-cols-2">
               <label className="" htmlFor="entrynumber">Document Status</label>
               <div>
@@ -609,13 +658,14 @@ export default function SalesOrder() {
           <thead className="tables">
             <tr>
               <th></th>
-                <th>Item Code</th>
+                <th>Item Codes</th>
                 <th>Item Name</th>
                 <th>Quantity</th>
                 <th>Unit of Measure (UOM)</th>
                 <th>UOM Conversion</th>
                 <th>Warehouse</th>
                 <th>Inventory Status</th>
+                <th>Price</th>
                 <th>Selling Price before Discount</th>
                 <th>Discount Rate</th>
                 <th>Selling Price after Discount</th>
@@ -637,7 +687,7 @@ export default function SalesOrder() {
                     </button>
                 </td>
                 <td onClick={() => openItemTable(rowIndex)}>
-                  <div className="grid grid-cols-2">
+                  <div className="flex gap-3 justify-end">
                      <div>
                       {rowData.itemCode}
                      </div>
@@ -661,15 +711,15 @@ export default function SalesOrder() {
                       {rowData.uom}
                      </div>
                      <div className="text-right">
-                        <button onClick={() => openOUMTable(rowIndex)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                        <button onClick={() => openOUMTable(rowIndex, rowData.itemCode)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
                      </div>
                   </div>
                 </td>
                 <td>
-                  
+                  {rowData.uomConversion}
                 </td>
                 <td>
-                  <div className="grid grid-cols-2">
+                <div className="flex gap-3 justify-end">
                      <div>
                       {rowData.location}
                      </div>
@@ -679,6 +729,11 @@ export default function SalesOrder() {
                   </div>
                 </td>
                 <td></td>
+                <td>
+                  {
+                    localCurrency.format(rowData.price)
+                  }
+                </td>
                 <td>
                   {localCurrency.format(rowData.sellingPriceBeforeDiscount)}
                 </td>
@@ -695,8 +750,16 @@ export default function SalesOrder() {
                 </td>
                 <td></td>
                 <td></td>
-                <td></td>
-                <td></td>
+                <td>
+                  {
+                    rowData.taxCodePercentage
+                  }%
+                </td>
+                <td>
+                  {
+                    localCurrency.format(rowData.taxAmount)
+                  }
+                </td>
                 <td></td>
                 <td></td>
                 <td>{localCurrency.format(rowData.grossTotal)}</td>
@@ -711,11 +774,12 @@ export default function SalesOrder() {
         {
           openItemTablePanel && (
             <Draggable>
-              <div className="fields h-[400px] overflow-x-auto bg-white shadow-lg" style={{ 
+              <div className="fields h-[500px] overflow-x-auto bg-white shadow-lg" style={{ 
                 border: '1px solid #ccc', 
                 position: 'absolute', 
-                top: '45%',
-                left: '30%',
+                width: '80%',
+                top: '10%',
+                left: '10%',
               }}  >
                 
                 <div className="grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
@@ -742,6 +806,9 @@ export default function SalesOrder() {
                         <th>Item Code</th>
                         <th>Item Name</th>
                         <th>Item Price</th>
+                        <th>Availability</th>
+                        <th>UOM</th>
+                        <th>Num In Sale</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -749,13 +816,22 @@ export default function SalesOrder() {
                       // eslint-disable-next-line react/jsx-key
                       <tr className="trcus cursor-pointer">
                         <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.itemCode}
+                          {item.ItemCode}
                         </td>
                         <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.itemName}
+                          {item.ItemName}
                         </td>
                         <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.sellingPrice}
+                          {localCurrency.format(item.Price)}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.Availability}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.UomCode}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.NumInSale}
                         </td>
                       </tr>
                     ))}
@@ -842,18 +918,17 @@ export default function SalesOrder() {
                             </td>
                           </tr>
                         ))} */}
-                          <tr className="trcus">
-                            <td className="tdcus">Box</td>
-                            <td className="tdcus">1</td>
-                          </tr>
-                          <tr className="trcus">
-                            <td className="tdcus">PC</td>
-                            <td className="tdcus">1</td>
-                          </tr>
-                          <tr className="trcus">
-                            <td className="tdcus">Dozen</td>
-                            <td className="tdcus">1</td>
-                          </tr>
+                          {UOMList.map((e, rowIndex)=>(
+                            // eslint-disable-next-line react/jsx-key
+                            <tr className="trcus cursor-pointer">
+                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty)}>
+                                  {e.UomCode}
+                              </td>
+                              <td className="tdcus cursor-pointer" onClick={()=>handleUOM(rowIndex, e.BaseQty)}>
+                                  {e.BaseQty}
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -980,15 +1055,59 @@ export default function SalesOrder() {
       <div className="text-left p-2 grid grid-cols-2 col1 text-[14px] mt-5">
           <div className="w-[300px] ">
             <div className="grid grid-cols-2">
-              <label htmlFor="documentnumber">Mode of Payment</label>
-              <div>
-                <input type="text" />
+              <label htmlFor="documentnumber">Mode of Payment:</label>
+              <div className="">
+                <div className="flex justify-start gap-2 w-[100px]">
+                  <input className="w-[20px]" type="checkbox" />
+                  Cash
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  Credit Card
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  Debit Card
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  Dated Check
+                </div>
+                <div className="flex justify-start gap-2 w-[200px]">
+                  <input className="w-[20px]" type="checkbox" />
+                  Dated Check Check
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  Online Transfer
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  On Account
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" />
+                  Cash on Delivery
+                </div>
+
               </div>
             </div>
             <div className="grid grid-cols-2">
               <label htmlFor="documentnumber">Mode of Releasing</label>
               <div>
-                <input type="text" />
+                <select className="selections" name="" id="">
+                  <option value="" disabled selected>Please Select</option>
+                  <option value="">Standard-Pick-up</option>
+                  <option value="">Standard-Delivery</option>
+                  <option value="">Standard-Pick-up to Other Store</option>
+                  <option value="">Back Order-Pick-up</option>
+                  <option value="">Back Order-Delivery</option>
+                  <option value="">Back Order-Pick-up to Other Store</option>
+                  <option value="">Drop-Ship-Pick-up to DC</option>
+                  <option value="">Drop-Ship-Pick-up to Vendor</option>
+                  <option value="">Drop-Ship-Delivery from DC</option>
+                  <option value="">Drop-Ship-Delivery from Vendor</option>
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2">

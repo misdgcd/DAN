@@ -244,7 +244,7 @@ export default function Home() {
                 border: '1px solid #ccc', 
                 position: 'absolute', 
                 zIndex: 2,
-                top: '10%',
+                top: '5%',
                 left: '15%',
                 transform: 'translate(-50%, -50%)',
                 borderBottom: 'solid 2px #F0AB00' 
@@ -300,13 +300,16 @@ export default function Home() {
               <div className="">User:</div><span className="underline">Administrator</span>
             </div>
             <div className="flex gap-2 p-2">
-              <div>Branch ID:</div><span className="underline">6</span>
+              <div>Branch ID:</div><span className="underline">4</span>
             </div>
             <div className="flex gap-2 p-2">
-              <div>Branch:</div><span className="underline">DC SBI GENSAN</span>
+              <div>Branch:</div><span className="underline">GENSAN BRANCH</span>
             </div>
             <div className="flex gap-2 p-2">
-              <div>WHS Code:</div><span className="underline">DSBI GSGS</span>
+              <div>WHS Code:</div><span className="underline">GSCNAPGS</span>
+            </div>
+            <div className="flex gap-2 p-2">
+              <div>Pricelist Num:</div><span className="underline">14</span>
             </div>
         </div>
         
