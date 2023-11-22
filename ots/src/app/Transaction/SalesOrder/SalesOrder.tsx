@@ -6,28 +6,29 @@ import SalesQoutation from "../SalesQoutation/SalesQoutation";
 import { height } from "@fortawesome/free-brands-svg-icons/fa42Group";
 import Draggable from "react-draggable";
 import { v4 as uuidv4 } from 'uuid';
+import axios from "axios";
 
 export default function SalesOrder() {
 
   const [tableData, setTableData] = useState([
     {
-      itemCode: '1',
+      itemCode: '',
       itemName: '',
       quantity: '',
       uom: '',
       uomConversion: '',
       location: '',
       inventoryStatus: '',
-      sellingPriceBeforeDiscount: '',
-      discountRate: '',
-      sellingPriceAfterDiscount: '',
+      sellingPriceBeforeDiscount: 0,
+      discountRate: 0,
+      sellingPriceAfterDiscount: 0,
       lowerBound: '',
       taxCode: '',
       taxCodePercentage: '',
       taxAmount: '',
       modeOfReleasing: '',
       scPwdDiscount: '',
-      grossTotal: '',
+      grossTotal: 0,
       selected: false,
     }
   ]);
@@ -37,6 +38,13 @@ export default function SalesOrder() {
     const newData: any = [...tableData];
     newData[rowIndex][fieldName] = value;
     console.log(value)
+  };
+
+  const onAddHeader = async () => {
+      // const item = await axios.post(`${process.env.NEXT_PUBLIC_IP}/item`);
+      // setAddItemModalALert(true);
+      // console.log(item.data);
+      // setOpen(false);
   };
 
   const handleAddRow = (rowIndex: any, fieldName: any) => {
@@ -50,21 +58,23 @@ export default function SalesOrder() {
         uomConversion: '',
         location: '',
         inventoryStatus: '',
-        sellingPriceBeforeDiscount: '',
-        discountRate: '',
-        sellingPriceAfterDiscount: '',
+        sellingPriceBeforeDiscount: 0,
+        discountRate: 0,
+        sellingPriceAfterDiscount: 0,
         lowerBound: '',
         taxCode: '',
         taxCodePercentage: '',
         taxAmount: '',
         modeOfReleasing: '',
         scPwdDiscount: '',
-        grossTotal: '',
+        grossTotal: 0,
         selected: false,
       },
     ]);
 
-    console.log(tableData)
+
+    onAddHeader();
+
 
   };
 
@@ -237,11 +247,70 @@ export default function SalesOrder() {
   // Open Item Table
 
   const [openItemTablePanel, setOpenItemTablePanel] = useState(false);
+  const [openOUMPanel, setOpenOUMPanel] = useState(false);
+  const [openLocationPanel, setOpenLocationPanel] = useState(false);
   const [showItems, setShowItems] = useState(false);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+  const [totalAfterVat, settotalAfterVat] = useState(0);
+  const [totalBeforeVat, setTotalBeforeVat] = useState(0);
+  const [totalVat, setTotalVat] = useState(0);
+
+
+  useEffect(()=>{
+
+    let tempSum = 0;
+    let tempSum2 = 0;
+
+    const updatedTableData = [...tableData];
+    // console.log('data', updatedTableData[0]['grossTotal'])
+
+    let arrayLen = updatedTableData.length;
+    
+    for(let i=0; i<arrayLen; i++){
+      tempSum = tempSum + (updatedTableData[i]['sellingPriceBeforeDiscount'] * updatedTableData[i]['quantity']);
+      tempSum2 = tempSum2 + updatedTableData[i]['grossTotal'];
+    }
+
+    setTotalBeforeVat(localCurrency.format(tempSum))
+    settotalAfterVat(localCurrency.format(tempSum2))
+    setTotalVat(localCurrency.format(tempSum - tempSum2));
+
+  });
+
+
+  function sum(){
+
+    let tempSum = 0;
+
+    const updatedTableData = [...tableData];
+    // console.log('data', updatedTableData[0]['grossTotal'])
+
+    let arrayLen = updatedTableData.length;
+    
+    for(let i=0; i<arrayLen; i++){
+      tempSum = tempSum + updatedTableData[i]['grossTotal']
+    }
+
+    console.log(tempSum);
+
+  }
+
+  sum();
+
+  
 
   const openItemTable = (rowIndex: any) => {
     setOpenItemTablePanel(!openItemTablePanel);
+    setSelectedRowIndex(rowIndex);
+  }
+
+  const openOUMTable = (rowIndex: any) => {
+    setOpenOUMPanel(!openOUMPanel);
+    setSelectedRowIndex(rowIndex);
+  }
+
+  const openLocationTable = (rowIndex: any) => {
+    setOpenLocationPanel(!openLocationPanel);
     setSelectedRowIndex(rowIndex);
   }
   
@@ -252,7 +321,12 @@ export default function SalesOrder() {
         ...updatedTableData[selectedRowIndex],
         itemCode: item.itemCode,
         itemName: item.itemName,
-        uomConversion: item.sellingPrice
+        quantity: 1,
+        discountRate: 0,
+        sellingPriceBeforeDiscount: item.sellingPrice,
+        sellingPriceAfterDiscount: item.sellingPrice,
+        uom: 'Box',
+        grossTotal: item.sellingPrice
         // Update other fields based on item data, e.g., price, tax, etc.
       };
       setTableData(updatedTableData);
@@ -294,12 +368,30 @@ export default function SalesOrder() {
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
     // Calculate amount based on quantity and price
-    const amount = quantity * item.uomConversion;
+    const discount = item.discountRate;
+    const amount = quantity * item.sellingPriceBeforeDiscount;
     // Update quantity and gross total
     updatedTableData[rowIndex] = {
       ...item,
       quantity,
-      location: amount,
+      grossTotal: quantity * item.sellingPriceAfterDiscount
+      // Other calculations if needed
+    };
+    setTableData(updatedTableData);
+  };
+
+  const handleDiscountRateChange = (rowIndex: any, discountRates: any) => {
+    const updatedTableData = [...tableData];
+    const item = updatedTableData[rowIndex];
+    // Calculate amount based on quantity and price
+    const amount = ((discountRates/100) * item.sellingPriceBeforeDiscount);
+    const finalAmount = item.sellingPriceBeforeDiscount - amount;
+    // Update quantity and gross total
+    updatedTableData[rowIndex] = {
+      ...item,
+      discountRate: discountRates,
+      sellingPriceAfterDiscount: finalAmount,
+      grossTotal: finalAmount * item.quantity,
       // Other calculations if needed
     };
     setTableData(updatedTableData);
@@ -522,11 +614,11 @@ export default function SalesOrder() {
                 <th>Quantity</th>
                 <th>Unit of Measure (UOM)</th>
                 <th>UOM Conversion</th>
-                <th>Location</th>
+                <th>Warehouse</th>
                 <th>Inventory Status</th>
-                <th>Selling Price before Discount (VAT-INC)</th>
+                <th>Selling Price before Discount</th>
                 <th>Discount Rate</th>
-                <th>Selling Price after Discount (VAT-INC)</th>
+                <th>Selling Price after Discount</th>
                 <th>Lower Bound</th>
                 <th>Tax Code</th>
                 <th>Tax Code %</th>
@@ -544,7 +636,16 @@ export default function SalesOrder() {
                     <span className="text-md text-red-600">❌</span>
                     </button>
                 </td>
-                <td onClick={() => openItemTable(rowIndex)}>{rowData.itemCode}</td>
+                <td onClick={() => openItemTable(rowIndex)}>
+                  <div className="grid grid-cols-2">
+                     <div>
+                      {rowData.itemCode}
+                     </div>
+                     <div className="text-right">
+                        <button className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                     </div>
+                  </div>
+                </td>
                 <td>{rowData.itemName}</td>
                 <td>
                   <input
@@ -554,14 +655,59 @@ export default function SalesOrder() {
                     onChange={(e) => handleQuantityChange(rowIndex, e.target.value)}
                   />
                 </td>
+                <td>
+                  <div className="grid grid-cols-2">
+                     <div>
+                      {rowData.uom}
+                     </div>
+                     <div className="text-right">
+                        <button onClick={() => openOUMTable(rowIndex)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                     </div>
+                  </div>
+                </td>
+                <td>
+                  
+                </td>
+                <td>
+                  <div className="grid grid-cols-2">
+                     <div>
+                      {rowData.location}
+                     </div>
+                     <div className="text-right">
+                        <button onClick={() => openLocationTable(rowIndex)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                     </div>
+                  </div>
+                </td>
                 <td></td>
-                <td>{localCurrency.format(rowData.uomConversion)}</td>
-                <td>{localCurrency.format(rowData.location)}</td>
+                <td>
+                  {localCurrency.format(rowData.sellingPriceBeforeDiscount)}
+                </td>
+                <td>
+                  <input
+                    className="border-transparent"
+                    type=""
+                    value={rowData.discountRate}
+                    onChange={(e) => handleDiscountRateChange(rowIndex, e.target.value)}
+                  />
+                </td>
+                <td>
+                  {localCurrency.format(rowData.sellingPriceAfterDiscount)}
+                </td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>{localCurrency.format(rowData.grossTotal)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+        {/* Panel For Table  */}
+
         {
           openItemTablePanel && (
             <Draggable>
@@ -600,18 +746,15 @@ export default function SalesOrder() {
                     </thead>
                     <tbody>
                     {filteredDataItem.map((item, index) => (
-                      // <td key={index} onClick={() => handleItemClick(item)}>
-                      //   {item.itemName} - ${item.sellingPrice}
-                      // </td>
                       // eslint-disable-next-line react/jsx-key
-                      <tr className="cursor-pointer">
-                        <td key={index} onClick={() => handleItemClick(item)}>
+                      <tr className="trcus cursor-pointer">
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
                           {item.itemCode}
                         </td>
-                        <td key={index} onClick={() => handleItemClick(item)}>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
                           {item.itemName}
                         </td>
-                        <td key={index} onClick={() => handleItemClick(item)}>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
                           {item.sellingPrice}
                         </td>
                       </tr>
@@ -624,6 +767,212 @@ export default function SalesOrder() {
             </Draggable>
           )
         }
+
+        {
+          openOUMPanel && (
+            <Draggable>
+              <div className="fields overflow-x-auto bg-white shadow-lg" style={{ 
+                border: '1px solid #ccc', 
+                position: 'absolute', 
+                top: '45%',
+                left: '35%',
+              }}  >
+                
+                <div className="grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
+                <div>
+                Select OUM
+                </div>
+                <div className="text-right">
+                  <span onClick={openOUMTable} className="cursor-pointer">❌</span>
+                </div>
+                </div>
+                <div className="p-2">
+                <div className="content">
+                  {/* <div>
+                    Search: <input 
+                      type="text"
+                      className="mb-1"
+                      value={searchTerm}
+                      onChange={handleSearchItem}
+                      className="mb-1"/>
+                  </div>
+                  <table>
+                    <thead className="tables">
+                      <tr>
+                        <th>Item Code</th>
+                        <th>Item Name</th>
+                        <th>Item Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {filteredDataItem.map((item, index) => (
+                      // eslint-disable-next-line react/jsx-key
+                      <tr className="trcus cursor-pointer">
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.itemCode}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.itemName}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.sellingPrice}
+                        </td>
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table> */}
+                    
+                    <div>
+                      <table>
+                        <thead className="tables">
+                          <tr>
+                            <th>UOM</th>
+                            <th>Conversion</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {/* {filteredDataItem.map((item, index) => (
+                          // eslint-disable-next-line react/jsx-key
+                          <tr className="trcus cursor-pointer">
+                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                              {item.itemCode}
+                            </td>
+                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                              {item.itemName}
+                            </td>
+                          </tr>
+                        ))} */}
+                          <tr className="trcus">
+                            <td className="tdcus">Box</td>
+                            <td className="tdcus">1</td>
+                          </tr>
+                          <tr className="trcus">
+                            <td className="tdcus">PC</td>
+                            <td className="tdcus">1</td>
+                          </tr>
+                          <tr className="trcus">
+                            <td className="tdcus">Dozen</td>
+                            <td className="tdcus">1</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+                </div>
+              </div>
+            </Draggable>
+          )
+        }
+
+
+        {
+          openLocationPanel && (
+            <Draggable>
+              <div className="fields overflow-x-auto bg-white shadow-lg" style={{ 
+                border: '1px solid #ccc', 
+                position: 'absolute', 
+                top: '20%',
+                left: '20%',
+                height: '300px'
+              }}  >
+                
+                <div className="grid grid-cols-2 p-2 text-left windowheader" style={{ cursor: 'move' }}>
+                <div>
+                  Warehouse
+                </div>
+                <div className="text-right">
+                  <span onClick={openLocationTable} className="cursor-pointer">❌</span>
+                </div>
+                </div>
+                <div className="p-2">
+                <div className="content">
+                  {/* <div>
+                    Search: <input 
+                      type="text"
+                      className="mb-1"
+                      value={searchTerm}
+                      onChange={handleSearchItem}
+                      className="mb-1"/>
+                  </div>
+                  <table>
+                    <thead className="tables">
+                      <tr>
+                        <th>Item Code</th>
+                        <th>Item Name</th>
+                        <th>Item Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {filteredDataItem.map((item, index) => (
+                      // eslint-disable-next-line react/jsx-key
+                      <tr className="trcus cursor-pointer">
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.itemCode}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.itemName}
+                        </td>
+                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                          {item.sellingPrice}
+                        </td>
+                      </tr>
+                    ))}
+                    </tbody>
+                  </table> */}
+                    
+                    <div>
+                      <div className="mb-2 text-[13px] flex gap-5">
+                        <div>
+                          Item Code: <input type="text" />
+                        </div>
+                        <div>
+                          Item Name: <input type="text" />
+                        </div>
+                        <div>
+                          UOM: <input type="text" />
+                        </div>
+                      </div>
+                      <table>
+                        <thead className="tables">
+                          <tr>
+                            <th>Warehouse Code</th>
+                            <th>Warehouse Name</th>
+                            <th>Availability</th>
+                            <th>On-hand</th>
+                            <th>Commited</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                        {/* {filteredDataItem.map((item, index) => (
+                          // eslint-disable-next-line react/jsx-key
+                          <tr className="trcus cursor-pointer">
+                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                              {item.itemCode}
+                            </td>
+                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
+                              {item.itemName}
+                            </td>
+                          </tr>
+                        ))} */}
+                          
+                          <tr>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                            <td>N/A</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                </div>
+                </div>
+              </div>
+            </Draggable>
+          )
+        }
+
+
       </div>
       <div className="text-left ml-2">
         <button onClick={handleAddRow} className="p-1 mt-2 mb-1 text-[12px] bg-[#F4D674]"><span>+</span> Add Row</button>
@@ -666,19 +1015,19 @@ export default function SalesOrder() {
               <div className="grid grid-cols-2 text-right">
                 <label htmlFor="documentnumber" className="text-right">Total Amount Before VAT</label>
                 <div>
-                  <input type="text" />
+                  <input value={totalBeforeVat} type="text" />
                 </div>
               </div>
               <div className="grid grid-cols-2">
                 <label htmlFor="documentnumber">Total VAT</label>
                 <div>
-                  <input type="text" />
+                  <input value={totalVat} type="text" />
                 </div>
               </div>
               <div className="grid grid-cols-2">
                 <label htmlFor="documentnumber">Total After VAT</label>
                 <div>
-                  <input type="text" />
+                  <input value={totalAfterVat} type="text" />
                 </div>
               </div>
             </div>
@@ -686,9 +1035,8 @@ export default function SalesOrder() {
           </div>
       </div>
       <div className="p-2 flex justify-start">
-        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Add</button> 
-        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Search</button> 
-        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Print</button>
+        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Save as draft</button> 
+        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Commit</button>
       </div>
       {
         // <div className="text-left">

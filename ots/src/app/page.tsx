@@ -158,7 +158,10 @@ export default function Home() {
 
   return (
     <>
-    <div className='flex'>
+    {/* <div className="fixed w-full bg-white z-10">
+      ss
+    </div> */}
+    <div className='flex z-20'>
       <div className='p-2 nav w-60'>
           <div className=''>
             <div className='flex items-center justify-center'>
@@ -227,6 +230,9 @@ export default function Home() {
                 
               </div>
             </div>
+            {/* <div className="absolute  bg-red-200 w-[100%]">
+              s
+            </div> */}
           </div>
       </div>
       <div className='w-full overflow-auto'>
@@ -289,8 +295,23 @@ export default function Home() {
           </Draggable>
         )}
 
-
+        <div className="absolute bottom-2 right-2 rounded-lg bg-white flex gap-3 shadow-xl text-[13px]">
+            <div className="flex gap-2 p-2 transition-all hover:text-[#F0AB00]">
+              <div className="">User:</div><span className="underline">Administrator</span>
+            </div>
+            <div className="flex gap-2 p-2">
+              <div>Branch ID:</div><span className="underline">6</span>
+            </div>
+            <div className="flex gap-2 p-2">
+              <div>Branch:</div><span className="underline">DC SBI GENSAN</span>
+            </div>
+            <div className="flex gap-2 p-2">
+              <div>WHS Code:</div><span className="underline">DSBI GSGS</span>
+            </div>
         </div>
+        
+        </div>
+        
       </div>
     </div>
     </>

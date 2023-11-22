@@ -269,7 +269,7 @@ th, tr, td{
   border: solid 1px rgb(129, 129, 129);
 }
 
-input, select, textarea{
+input, textarea{
   height: 20px;
   width: 200px;
   border: solid 1px rgb(129, 129, 129);
