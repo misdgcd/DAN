@@ -30,6 +30,11 @@ export default function SalesOrder() {
   const [showDoc, setShowDoc] = useState(false);
   const [showCustomer, setShowCustomer] = useState(false);
 
+  const warehouseCode = "GSCNAPGS";
+  const brandID = 4;
+  const priceListNum = 14;
+  const user = "Administrator";
+
   const now = new Date();
   
   const manilaDate = now.toLocaleDateString('en-US', { maximumFractionDigits: 4, timeZone: 'Asia/Manila' });
@@ -89,7 +94,7 @@ export default function SalesOrder() {
   };
 
   const onAddheaderItems = async () => {
-    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/GSCNAPGS/C000174`);
+    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/${warehouseCode}/C000174`);
     setItemDataList(item.data);
   };
   
@@ -327,6 +332,7 @@ export default function SalesOrder() {
 
     let tempSum = 0;
     let tempSum2 = 0;
+    let taxAmountSum = 0;
 
     const updatedTableData = [...tableData];
 
@@ -335,11 +341,12 @@ export default function SalesOrder() {
     for(let i=0; i<arrayLen; i++){
       tempSum = tempSum + (updatedTableData[i]['sellingPriceBeforeDiscount'] * parseInt(updatedTableData[i]['quantity']));
       tempSum2 = tempSum2 + updatedTableData[i]['grossTotal'];
+      taxAmountSum = taxAmountSum + updatedTableData[i]['taxAmount'];
     }
-
-    setTotalBeforeVat(localCurrency.format(tempSum))
+    
+    setTotalBeforeVat(localCurrency.format(tempSum - taxAmountSum))
     settotalAfterVat(localCurrency.format(tempSum2))
-    setTotalVat(localCurrency.format(tempSum - tempSum2));
+    setTotalVat(localCurrency.format(taxAmountSum));
 
   });
 
@@ -428,7 +435,7 @@ export default function SalesOrder() {
         taxCodeDataNow = e.TaxCode
       })
 
-      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${taxCodeDataNow}/${item.ItemCode}/GSCNAPGS/1`);
+      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${taxCodeDataNow}/${item.ItemCode}/${warehouseCode}/1`);
       const lowerboundArr = lowerbound.data;
       const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
       const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];      
@@ -528,9 +535,7 @@ export default function SalesOrder() {
     }else{
       
     }
-
   }
-
 
   const handleQuantityChange =  async (rowIndex: any, quantity: any) => {
     
@@ -556,7 +561,7 @@ export default function SalesOrder() {
       
       const disRateFor = ((disPriceBefDis - disAfterPrice)/disPriceBefDis)*100;
 
-      const cost = await axios.get(`${process.env.NEXT_PUBLIC_IP}/cost/${item.itemCode}/GSCNAPGS`);
+      const cost = await axios.get(`${process.env.NEXT_PUBLIC_IP}/cost/${item.itemCode}/${warehouseCode}`);
       const costArr = cost.data;
 
       console.log("Costtt" , costArr[0]['Cost'], item.sellingPriceAfterDiscount);
@@ -626,7 +631,7 @@ export default function SalesOrder() {
     const uomitemCode = item['itemCode'];
     const uomtaxAmout = item['taxAmount'];
 
-    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${uomtaxCode}/${uomitemCode}/GSCNAPGS/${BaseQty}`);
+    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${uomtaxCode}/${uomitemCode}/${warehouseCode}/${BaseQty}`);
     const lowerboundArr = lowerbound.data;
     const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
     
@@ -647,7 +652,6 @@ export default function SalesOrder() {
     setOpenOUMPanel(!openOUMPanel);
 
   }
-
 
   // Mode of Releasing Function
   const modeReleasing = (value: any) => {
@@ -683,7 +687,6 @@ export default function SalesOrder() {
     setTableData(updatedTableData);
     setOpenModRelTablePanel(!openModRelTablePanel);
   }
-
 
   return (
     <>
@@ -1473,9 +1476,9 @@ export default function SalesOrder() {
         <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Commit</button>
       </div>
       {
-        // <div className="text-left">
-        //   <pre>{JSON.stringify(tableData, null, 2)}</pre>
-        // </div>
+        <div className="text-left">
+          <pre>{JSON.stringify(tableData, null, 2)}</pre>
+        </div>
       }
     </>
   );
