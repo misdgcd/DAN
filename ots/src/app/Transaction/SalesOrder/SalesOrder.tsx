@@ -17,19 +17,42 @@ export default function SalesOrder() {
   const [WareHouseList, setWareHouseList] = useState([]);
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
 
-
   const [cardCodedata, setcardCodedata] = useState("");
-
   const [taxCodeData, settaxCodeData] = useState([]);
-
   const [taxRateData, settaxRateData] = useState([]);
-
   const [lowerBoundData, setLowerBoundData] = useState("");
-
 
   const [itemcodewh, setitemcodewh] = useState("");
   const [itemnamews, setitemnamews] = useState("");
   const [itemuomws, setitemuomws] = useState("");
+
+  const [showWindow, setShowWindow] = useState(false);
+  const [showDoc, setShowDoc] = useState(false);
+  const [showCustomer, setShowCustomer] = useState(false);
+
+  const now = new Date();
+  
+  const manilaDate = now.toLocaleDateString('en-US', { maximumFractionDigits: 4, timeZone: 'Asia/Manila' });
+
+  const [itemcodetextalign, setitemcodetextalign] = useState('');
+
+  const [openItemTablePanel, setOpenItemTablePanel] = useState(false);
+  const [openOUMPanel, setOpenOUMPanel] = useState(false);
+  const [openModRelTablePanel, setOpenModRelTablePanel] = useState(false);
+  const [openLocationPanel, setOpenLocationPanel] = useState(false);
+  const [showItems, setShowItems] = useState(false);
+  const [totalAfterVat, settotalAfterVat] = useState("");
+  const [totalBeforeVat, setTotalBeforeVat] = useState("");
+  const [totalVat, setTotalVat] = useState("");
+  const [sellingPriceAfterDiscountData, setSellingPriceAfterDis] = useState(0)
+
+  let customerData2 = [{}];
+  let currentCustomerData = customerList;
+  const arrayCustomer = [
+    customerList
+  ]
+  
+  const [searchTerm, setSearchTerm] = useState('');
 
   const [tableData, setTableData] = useState([
     {
@@ -44,6 +67,7 @@ export default function SalesOrder() {
       sellingPriceBeforeDiscount: 0,
       discountRate: 0,
       sellingPriceAfterDiscount: 0,
+      sellingPriceAfterDiscountTemp: 0,
       lowerBound: 0,
       taxCode: '',
       taxCodePercentage: 0,
@@ -51,7 +75,7 @@ export default function SalesOrder() {
       volDisPrice: 0,
       belVolDisPrice: 'N',
       cost: 0,
-      belCost: 0, 
+      belCost: '', 
       modeOfReleasing: '',
       scPwdDiscount: '',
       grossTotal: 0,
@@ -59,15 +83,13 @@ export default function SalesOrder() {
     }
   ]);
 
-  // Database Declarations
-
   const onAddHeader = async () => {
     const customers = await axios.get(`${process.env.NEXT_PUBLIC_IP}/customer`);
     setCustomerDataList(customers.data);
   };
 
   const onAddheaderItems = async () => {
-    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/GSCNAPGS`);
+    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/GSCNAPGS/C000174`);
     setItemDataList(item.data);
   };
   
@@ -99,7 +121,6 @@ export default function SalesOrder() {
 
   const onAddLowerBound = async (bid: any, taxcodex: any, itemcodex: any, whscodex: any, indexNum: any, uomLoweBound: any) =>{
     const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/${bid}/${taxcodex}/${itemcodex}/${whscodex}/${uomLoweBound}`);
-    // const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/4/OVTGSNA/0000018HWFAN/GSCNAPGS/1`);
 
     let lowerBoundArr = lowerbound.data;
 
@@ -113,11 +134,6 @@ export default function SalesOrder() {
     onAddheaderItems();
   }, []);
 
-
-  // Database Declarations
-
-
-
   const handleInputChange = (rowIndex: any, fieldName: any, value: any) => {
     const newData: any = [...tableData];
     newData[rowIndex][fieldName] = value;
@@ -128,10 +144,6 @@ export default function SalesOrder() {
   
 
   const handleAddRow = (rowIndex: any, fieldName: any) => {
-    // onAddHeaderWareHouse('0003401HWAGS', 'BOX', '4');
-    
-    // onAddHeader;
-
 
     setTableData(prevData => [
       ...prevData,
@@ -147,6 +159,7 @@ export default function SalesOrder() {
         sellingPriceBeforeDiscount: 0,
         discountRate: 0,
         sellingPriceAfterDiscount: 0,
+        sellingPriceAfterDiscountTemp: 0,
         lowerBound: 0,
         taxCode: '',
         taxCodePercentage: 0,
@@ -154,7 +167,7 @@ export default function SalesOrder() {
         volDisPrice: 0,
         belVolDisPrice: 'N',
         cost: 0,
-        belCost: 0,
+        belCost: '',
         modeOfReleasing: '',
         scPwdDiscount: '',
         grossTotal: 0,
@@ -170,10 +183,6 @@ export default function SalesOrder() {
   };
 
 
-
-
-  // Array Declarations
-
   const [customerData, setCustomerData] = useState([
     {
       customerCode: '00000',
@@ -183,21 +192,6 @@ export default function SalesOrder() {
       cusLicTradNum: 'N/A'
     }
   ]);
-
-  let customerData2 = [{}];
-
-  let currentCustomerData = customerList;
-
-
-  
-  // Search Table
-
-  const arrayCustomer = [
-    customerList
-  ]
-
-  
-  const [searchTerm, setSearchTerm] = useState('');
 
   const handleSearch = (event:any) => {
     setSearchTerm(event.target.value);
@@ -217,8 +211,6 @@ export default function SalesOrder() {
 
   const addCustomerData = (id:any, name:any, fname:any, address:any, tin:any) => {
 
-    // console.log("itemcode", id)
-
     onAddHeaderTaxCode(id, 'GSCNAPGS');
 
     const updatedTableData = [...tableData];
@@ -232,7 +224,6 @@ export default function SalesOrder() {
         updatedTableData[i] = {
           ...item,
           taxCodePercentage: e.Rate
-          // Other calculations if needed
         };
         setTableData(updatedTableData);
       }
@@ -258,29 +249,6 @@ export default function SalesOrder() {
 
   }
 
-
-  const [showWindow, setShowWindow] = useState(false);
-  const [showDoc, setShowDoc] = useState(false);
-  const [showCustomer, setShowCustomer] = useState(false);
-
-
-
-  // Date Declarations
-
-  const now = new Date();
-  
-  const manilaDate = now.toLocaleDateString('en-US', { maximumFractionDigits: 4, timeZone: 'Asia/Manila' });
-
-
-
-  // CSS Declarations
-
-  const [itemcodetextalign, setitemcodetextalign] = useState('');
-
-
-
-  // Onclick Functions
-
   const toggleShowWindow = () => {
     setShowWindow(!showWindow);
   }
@@ -299,6 +267,7 @@ export default function SalesOrder() {
       sellingPriceBeforeDiscount: '',
       discountRate: '',
       sellingPriceAfterDiscount: '',
+      sellingPriceAfterDiscountTemp: 0,
       lowerBound: 0,
       taxCode: '',
       taxCodePercentage: 0,
@@ -319,8 +288,6 @@ export default function SalesOrder() {
     const newData3: any = newData[rowIndex] = emptyData;
 
     const latestTableDataArr = tableData;
-
-    // console.log("1", newData2, "2", newData3, "tabledata", tableData)
 
     setTableData((prevData) => prevData.filter((_, index) => index !== rowIndex));
 
@@ -346,7 +313,6 @@ export default function SalesOrder() {
         updatedTableData[i] = {
           ...item,
           taxCodePercentage: e.Rate
-          // Other calculations if needed
         };
         setTableData(updatedTableData);
       }
@@ -357,27 +323,12 @@ export default function SalesOrder() {
     console.log('open sample');
   }
 
-
-  // Open Item Table
-
-  const [openItemTablePanel, setOpenItemTablePanel] = useState(false);
-  const [openOUMPanel, setOpenOUMPanel] = useState(false);
-  const [openModRelTablePanel, setOpenModRelTablePanel] = useState(false);
-  const [openLocationPanel, setOpenLocationPanel] = useState(false);
-  const [showItems, setShowItems] = useState(false);
-  const [totalAfterVat, settotalAfterVat] = useState("");
-  const [totalBeforeVat, setTotalBeforeVat] = useState("");
-  const [totalVat, setTotalVat] = useState("");
-  const [sellingPriceAfterDiscountData, setSellingPriceAfterDis] = useState(0)
-
-
   useEffect(()=>{
 
     let tempSum = 0;
     let tempSum2 = 0;
 
     const updatedTableData = [...tableData];
-    // console.log('data', updatedTableData[0]['grossTotal'])
 
     let arrayLen = updatedTableData.length;
     
@@ -398,16 +349,12 @@ export default function SalesOrder() {
     let tempSum = 0;
 
     const updatedTableData = [...tableData];
-    // console.log('data', updatedTableData[0]['grossTotal'])
 
     let arrayLen = updatedTableData.length;
     
     for(let i=0; i<arrayLen; i++){
       tempSum = tempSum + updatedTableData[i]['grossTotal']
     }
-
-    // console.log(tempSum);
-
   }
 
   sum();
@@ -433,7 +380,6 @@ export default function SalesOrder() {
           updatedTableData[i] = {
             ...item,
             taxCodePercentage: e.Rate
-            // Other calculations if needed
           };
           setTableData(updatedTableData);
         }
@@ -464,7 +410,6 @@ export default function SalesOrder() {
     setOpenModRelTablePanel(!openModRelTablePanel);
     setSelectedRowIndex(rowIndex);
   }
-
   
   const handleItemClick = async (item: any) => {
     if (selectedRowIndex !== null) {
@@ -475,10 +420,6 @@ export default function SalesOrder() {
       let taxCodeDataNow = "";
       let lowerBoundNow = 0;
 
-      
-      // let uomCOnversionSelectedItem = updatedTableData[selectedRowIndex]['uomConversion'];
-
-      
       taxRateData.map((e)=>{
         taxRateDataNow = e.Rate;
       })
@@ -487,16 +428,10 @@ export default function SalesOrder() {
         taxCodeDataNow = e.TaxCode
       })
 
-      // Lowerbound
-      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/4/${taxCodeDataNow}/${item.ItemCode}/GSCNAPGS/1`);
+      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${taxCodeDataNow}/${item.ItemCode}/GSCNAPGS/1`);
       const lowerboundArr = lowerbound.data;
-
       const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
-
-      const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];
-
-      
-      // console.log("lower new", lowerBoundData)
+      const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];      
 
         updatedTableData[selectedRowIndex] = {
 
@@ -507,16 +442,16 @@ export default function SalesOrder() {
           discountRate: 0,
           uom: item.UomCode,
           location: 'GSCNAPGS',
-          price: item.Price,
+          price: item.SRP,
           lowerBound: lowerBoundFinalItem,
           taxCode: taxCodeDataNow,
           uomConversion: item.NumInSale,
           taxCodePercentage: taxRateDataNow,
-          sellingPriceBeforeDiscount: item.Price,
-          sellingPriceAfterDiscount: item.Price,
-          taxAmount: item.Price * 0.12,
-          grossTotal: item.Price
-          // Update other fields based on item data, e.g., price, tax, etc.
+          belCost: 'N',
+          sellingPriceBeforeDiscount: item.SRP,
+          sellingPriceAfterDiscount: item.SRP,
+          taxAmount: item.SRP * 0.12,
+          grossTotal: item.SRP
         };
         setTableData(updatedTableData);
         setShowItems(false);
@@ -524,9 +459,6 @@ export default function SalesOrder() {
         setOpenItemTablePanel(!openItemTablePanel);
         setSellingPriceAfterDis(item.Price);
 
-
-        // Discounted Price
-        
         const disCardCode = cardCodedata;
         const disItemCode = item.ItemCode;
         const disQuantity = updatedTableData[selectedRowIndex]['quantity'];
@@ -537,46 +469,73 @@ export default function SalesOrder() {
     }
   };
 
-  const handleSellingAfterDis = (rowIndex: any, sellPrice: any) => {
+  const changeTextBoxValue = (rowIndex: any) => {
 
-    setSellingPriceAfterDis(sellPrice)
+    let sellingAfDis = document.getElementById('sellingAfDis');
+
     
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
-
+    
     const sellingAfterDis = item.sellingPriceAfterDiscount;
+    
+    const itemCodeID = item.itemCode;
 
-    console.log(parseFloat(sellingAfterDis) > parseFloat(sellPrice), parseFloat(sellingAfterDis), ">", parseFloat(sellPrice))
+    let idUOM = document.getElementById(itemCodeID);
 
-    if(parseFloat(sellingAfterDis) > parseFloat(sellPrice)){
-      console.log("Y")
-      updatedTableData[rowIndex] = {
-        ...item,
-        grossTotal: sellPrice * item.quantity,
-        belVolDisPrice: "Y"
-        // Other calculations if needed
-      };
-      setTableData(updatedTableData);
+    idUOM?.setAttribute('value', sellingAfterDis);
+
+  }
+
+  const handleKeyPressSel = (event: { key: string; }, rowIndex: any, value: any) => {
+
+    const updatedTableData = [...tableData];
+    const item = updatedTableData[rowIndex];
+    const sellingAfterDis = item.sellingPriceAfterDiscount;
+    const sellingAfterDisTemp = item.sellingPriceAfterDiscountTemp;
+    
+    if(event.key === 'Enter'){
+
+      let belCost = "";
+
+      if(parseFloat(sellingAfterDis) < item.cost){
+        belCost = "Y";
+      }else{
+        belCost = "N";
+      }
+
+      if(parseFloat(sellingAfterDis) < parseFloat(sellingAfterDisTemp)){
+        console.log("Y")
+        updatedTableData[rowIndex] = {
+          ...item,
+          grossTotal: value * item.quantity,
+          belVolDisPrice: "Y",
+          belCost: belCost,
+          sellingPriceAfterDiscount: value * item.quantity
+        };
+        setTableData(updatedTableData);
+      }else{
+        updatedTableData[rowIndex] = {
+          ...item,
+          grossTotal: value * item.quantity,
+          belVolDisPrice: "N",
+          sellingPriceAfterDiscount: value * item.quantity,
+          belCost: belCost,
+        };
+        setTableData(updatedTableData);
+      }
+  
     }else{
-      updatedTableData[rowIndex] = {
-        ...item,
-        grossTotal: sellPrice * item.quantity,
-        belVolDisPrice: "N"
-        // Other calculations if needed
-      };
-      setTableData(updatedTableData);
+      
     }
 
   }
+
 
   const handleQuantityChange =  async (rowIndex: any, quantity: any) => {
     
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
-    // Calculate amount based on quantity and price
-
-    // console.log(quantity)
-
     const discount = item.discountRate;
     const amount = quantity * item.sellingPriceBeforeDiscount;
 
@@ -593,25 +552,32 @@ export default function SalesOrder() {
     
       const disPriceArr = disPrice.data;
 
-
-      // formula for disRate
-
       const disAfterPrice = disPriceArr[0]['DiscPrice'];
       
       const disRateFor = ((disPriceBefDis - disAfterPrice)/disPriceBefDis)*100;
 
-      
-      console.log("Discount Price For" , disRateFor);
+      const cost = await axios.get(`${process.env.NEXT_PUBLIC_IP}/cost/${item.itemCode}/GSCNAPGS`);
+      const costArr = cost.data;
 
-      // Update quantity and gross total
+      console.log("Costtt" , costArr[0]['Cost'], item.sellingPriceAfterDiscount);
+
+      let belowCostBool = "";
+
+      if(item.sellingPriceAfterDiscount < costArr[0]['Cost']){
+        belowCostBool = "N";
+      }else{
+        belowCostBool = "Y";
+      }
+
       updatedTableData[rowIndex] = {
         ...item,
         quantity,
         discountRate: disRateFor,
+        cost: costArr[0]['Cost'] * item.uomConversion,
         sellingPriceAfterDiscount: disPriceArr[0]['DiscPrice'],
+        sellingPriceAfterDiscountTemp: disPriceArr[0]['DiscPrice'],
         grossTotal: quantity * item.sellingPriceAfterDiscount,
         taxAmount: (quantity * item.sellingPriceAfterDiscount) * 0.12
-        // Other calculations if needed
       };
       setTableData(updatedTableData);
       setSellingPriceAfterDis(item.sellingPriceAfterDiscount);
@@ -619,23 +585,18 @@ export default function SalesOrder() {
     }catch(e){
       
     }
-
-    
   };
 
   const handleDiscountRateChange = (rowIndex: any, discountRates: any) => {
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
-    // Calculate amount based on quantity and price
     const amount = ((discountRates/100) * item.sellingPriceBeforeDiscount);
     const finalAmount = item.sellingPriceBeforeDiscount - amount;
-    // Update quantity and gross total
     updatedTableData[rowIndex] = {
       ...item,
       discountRate: discountRates,
       sellingPriceAfterDiscount: finalAmount,
       grossTotal: finalAmount * item.quantity,
-      // Other calculations if needed
     };
     setTableData(updatedTableData);
   };
@@ -665,28 +626,24 @@ export default function SalesOrder() {
     const uomitemCode = item['itemCode'];
     const uomtaxAmout = item['taxAmount'];
 
-    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/4/${uomtaxCode}/${uomitemCode}/GSCNAPGS/${BaseQty}`);
+    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${uomtaxCode}/${uomitemCode}/GSCNAPGS/${BaseQty}`);
     const lowerboundArr = lowerbound.data;
-
     const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
     
+    const srp = await axios.get(`${process.env.NEXT_PUBLIC_IP}/srp/${uomitemCode}/${BaseQty}/${UomCode}/${uomtaxCode}/${lowerBoundFinalItem}/${cardCodedata}/14`);
+    const srpdata = srp.data;
 
-    console.log("lower", uomtaxAmout)
 
     updatedTableData[UOMListIndex] = {
       ...item,
       uomConversion: BaseQty,
       uom: UomCode,
       lowerBound: lowerBoundFinalItem,
-      sellingPriceBeforeDiscount: item.price * BaseQty,
-      sellingPriceAfterDiscount: item.price * BaseQty,
-      grossTotal: (item.price * BaseQty) * item.quantity
-      // Other calculations if needed
+      sellingPriceBeforeDiscount: srpdata[0]['SRP'],
+      grossTotal: (item.price * BaseQty) * item.quantity,
+      quantity: 0,
     };
     setTableData(updatedTableData);
-
-    // console.log(rowindex, BaseQty, UOMListIndex, item);
-
     setOpenOUMPanel(!openOUMPanel);
 
   }
@@ -703,26 +660,28 @@ export default function SalesOrder() {
       updatedTableData[i] = {
         ...item,
         modeOfReleasing: value
-        // Other calculations if needed
       };
       setTableData(updatedTableData);
     }
     
   }
 
-  const changeManualModRel = (moderel) => {
+  const changeManualModRel = (moderel: any) => {
     const updatedTableData = [...tableData];
+
+    console.log(moderel);
 
     const item = updatedTableData[selectedRowIndex];
 
     updatedTableData[selectedRowIndex] = {
       ...item,
-      modeReleasing: moderel
+      modeOfReleasing: moderel
     };
 
-    setTableData(updatedTableData);
+    console.log(item)
 
-    // console.log(selectedRowIndex, moderel, updatedTableData)
+    setTableData(updatedTableData);
+    setOpenModRelTablePanel(!openModRelTablePanel);
   }
 
 
@@ -923,7 +882,7 @@ export default function SalesOrder() {
           
         </div>
       </div>
-      <div className="fields mt-2 rounded-md text-left container bg-white overflow-x-auto shadow-xl p-2">
+      <div className="fields mt-2 rounded-md text-left container bg-white overflow-x-auto shadow-xl p-2 max-h-[200px]">
       <div className="">
         <table>
           <thead className="tables">
@@ -931,10 +890,10 @@ export default function SalesOrder() {
               <th></th>
                 <th>Item Codes</th>
                 <th>Item Name</th>
-                <th>Quantity</th>
                 <th>Unit of Measure (UOM)</th>
                 <th>UOM Conversion</th>
                 <th>Warehouse</th>
+                <th>Quantity</th>
                 <th>Inventory Status</th>
                 <th>Price</th>
                 <th>Selling Price before Discount</th>
@@ -944,7 +903,7 @@ export default function SalesOrder() {
                 <th>Tax Code</th>
                 <th>Tax Rate %</th>
                 <th>Tax Amount</th>
-                <th>Vol. Disc. Price</th>
+                {/* <th>Vol. Disc. Price</th> */}
                 <th>Below Vol. Disc. Price</th>
                 <th>Cost</th>
                 <th>Below Cost</th>
@@ -976,54 +935,66 @@ export default function SalesOrder() {
                   </div>
                 </td>
                 <td>{rowData.itemName}</td>
-                <td>
-                  <input
-                    className="border-transparent"
-                    type="number"
-                    value={rowData.quantity}
-                    onChange={(e) => handleQuantityChange(rowIndex, e.target.value)}
-                  />
-                </td>
-                <td>
-                  <div className="grid grid-cols-2">
-                     <div>
-                      {rowData.uom}
-                     </div>
-                     <div className="text-right">
-                        {
-                          rowData.itemCode != "" && (
-                            <button onClick={() => openOUMTable(rowIndex, rowData.itemCode)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
-                          )
-                        }
-                     </div>
-                  </div>
-                </td>
-                <td>
-                  {rowData.uomConversion}
-                </td>
-                <td>
-                  <div className="flex gap-3 justify-end">
-                     <div>
-                      {rowData.location}
-                     </div>
-                     <div className="text-right">
-                        {
-                          rowData.uom != "" && (
-                            <button onClick={() => openLocationTable(rowIndex, rowData.itemCode, rowData.uom, rowData.uomConversion, rowData.itemName)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
-                          )
-                        }
-                     </div>
-                  </div>
-                </td>
-                <td></td>
+                
                 <td>
                   {
-                    localCurrency.format(rowData.price)
+                    rowData.itemCode == 0 ? '' : (
+                      <div className="grid grid-cols-2">
+                        <div>
+                          {rowData.uom}
+                        </div>
+                        <div className="text-right">
+                            {
+                              rowData.itemCode != "" && (
+                                <button onClick={() => openOUMTable(rowIndex, rowData.itemCode)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                              )
+                            }
+                        </div>
+                      </div>
+                    )
                   }
                 </td>
                 <td>
                   {
-                    localCurrency.format(rowData.sellingPriceBeforeDiscount)
+                    rowData.uom == "" ? '' : rowData.uomConversion
+                  }
+                </td>
+                <td>
+                  {
+                    rowData.uom == "" ? '' : (
+                      <div className="flex gap-3 justify-end">
+                        <div>
+                          {rowData.location}
+                        </div>
+                        <div className="text-right">
+                            {
+                              rowData.uom != "" && (
+                                <button onClick={() => openLocationTable(rowIndex, rowData.itemCode, rowData.uom, rowData.uomConversion, rowData.itemName)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                              )
+                            }
+                        </div>
+                      </div>
+                    )
+                  }
+                </td>
+                <td>
+                  <input
+                    className="border-transparent"
+                    type=""
+                    value={rowData.quantity}
+                    placeholder="0"
+                    onChange={(e) => handleQuantityChange(rowIndex, e.target.value)}
+                  />
+                </td>
+                <td></td>
+                <td>
+                  {
+                    rowData.quantity == 0 ? '' : localCurrency.format(rowData.price)
+                  }
+                </td>
+                <td>
+                  {
+                    rowData.quantity == 0 ? '' : localCurrency.format(rowData.sellingPriceBeforeDiscount)
                   }
                 </td>
                 <td>
@@ -1033,25 +1004,38 @@ export default function SalesOrder() {
                     value={rowData.discountRate}
                     onChange={(e) => handleDiscountRateChange(rowIndex, e.target.value)}
                   /> */}
-                  {
-                    parseFloat(Math.max(rowData.discountRate).toFixed(2)) <= 0 ? 0 : Math.max(rowData.discountRate).toFixed(2)
+
+                  {   
+                    rowData.quantity <= 0 ? '' : parseFloat(Math.max(rowData.discountRate).toFixed(2)) <= 0 ? 0 : Math.max(rowData.discountRate).toFixed(2)
                   }
                 </td>
                 <td>
-                  <input
-                    className="border-transparent"
-                    type="number"
-                    value={sellingPriceAfterDiscountData}
-                    onChange={(e)=>handleSellingAfterDis(rowIndex, e.target.value)}
-                  />
                   {
-                    // Math.max(rowData.sellingPriceAfterDiscount).toFixed(2)
-                    
+                    rowData.quantity == 0 ? '' : (
+                      <div className="flex gap-2">
+                        <div>
+                          <input
+                          className="w-[100px]"
+                          type="number"
+                          id={rowData.itemCode}
+                          onClick={(e)=>changeTextBoxValue(rowIndex)}
+                          onKeyPress={(e)=>handleKeyPressSel(e, rowIndex, e.target.value)}
+                        />
+                        </div>
+                        <div>
+                          {
+                            rowData.sellingPriceAfterDiscountTemp
+                          }
+                        </div>
+                      </div>
+                    )
                   }
+                  
+                  
                 </td>
                 <td>
                 {
-                  localCurrency.format(rowData.lowerBound)
+                  rowData.quantity == 0 ? '' : localCurrency.format(rowData.lowerBound)
                 }
                 </td>
                 <td>
@@ -1066,71 +1050,56 @@ export default function SalesOrder() {
                 </td>
                 <td>
                   {
-                  //  Math.max(rowData.taxAmount).toFixed(2)
-                   localCurrency.format(rowData.taxAmount)
-                  //  rowData.taxAmount
+                     rowData.quantity == 0 ? '' : localCurrency.format(rowData.taxAmount)
+                  }
+                </td>
+                {/* <td>
+                  {
+                    rowData.quantity == 0 ? '' : rowData.sellingPriceAfterDiscount
+                  }
+                </td> */}
+                <td>
+                  {
+                    rowData.quantity == 0 ? '' : rowData.belVolDisPrice
                   }
                 </td>
                 <td>
                   {
-                    Math.max(rowData.sellingPriceAfterDiscount).toFixed(2)
+                    Math.floor(rowData.cost).toFixed(2)
                   }
                 </td>
                 <td>
                   {
-                    rowData.belVolDisPrice
+                    rowData.belCost
+                  }
+                </td>
+                <td>
+                  {
+                    rowData.quantity == 0 ? '' : (
+                      <div className="flex gap-3 justify-end">
+                        <div>
+                          {rowData.modeOfReleasing}
+                        </div>
+                        <div className="text-right">
+                        
+                                <button onClick={() => openModRelTable(rowIndex)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
+                            
+                        </div>
+                      </div>
+                    )
                   }
                 </td>
                 <td></td>
-                <td></td>
                 <td>
-                  <div className="flex gap-3 justify-end">
-                     <div>
-                      {rowData.modeOfReleasing}
-                      <input type="text" value={rowData.modeOfReleasing} />
-                     </div>
-                     <div className="text-right">
-                     
-                            <button onClick={() => openModRelTable(rowIndex)} className="bg-[#F0AB00] pr-1 pl-1">=</button>
-                         
-                     </div>
-                  </div>
-                  
-                  {/* <select name="" id="">
-                    <option disabled selected value={
-                        rowData.modeOfReleasing
-                    }>
-                    {
-                      rowData.modeOfReleasing
-                    }
-                    </option>
-                    <option value="Standard-Pick-up">Standard-Pick-up</option>
-                    <option value="Standard-Delivery">Standard-Delivery</option>
-                    <option value="Standard-Pick-up to Other Store">Standard-Pick-up to Other Store</option>
-                    <option value="Back Order-Pick-up">Back Order-Pick-up</option>
-                    <option value="Back Order-Delivery">Back Order-Delivery</option>
-                    <option value="Back Order-Pick-up to Other Store">Back Order-Pick-up to Other Store</option>
-                    <option value="Drop-Ship-Pick-up to DC">Drop-Ship-Pick-up to DC</option>
-                    <option value="Drop-Ship-Pick-up to Vendor">Drop-Ship-Pick-up to Vendor</option>
-                    <option value="Drop-Ship-Delivery from DC">Drop-Ship-Delivery from DC</option>
-                    <option value="Drop-Ship-Delivery from Vendor">Drop-Ship-Delivery from Vendor</option>
-                  </select> */}
+                  {
+                    rowData.quantity == 0 ? '' : localCurrency.format(rowData.grossTotal)
+                  }
                 </td>
-                <td></td>
-                <td>{localCurrency.format(rowData.grossTotal)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-
-
-
-
-
-        {/* Panel For Table  */}
-
         {
           openItemTablePanel && (
             <Draggable>
@@ -1182,7 +1151,7 @@ export default function SalesOrder() {
                           {item.ItemName}
                         </td>
                         <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {localCurrency.format(item.Price)}
+                          {localCurrency.format(item.SRP)}
                         </td>
                         <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
                           {item.Availability}
@@ -1328,40 +1297,6 @@ export default function SalesOrder() {
                 </div>
                 <div className="p-2">
                 <div className="content">
-                  {/* <div>
-                    Search: <input 
-                      type="text"
-                      className="mb-1"
-                      value={searchTerm}
-                      onChange={handleSearchItem}
-                      className="mb-1"/>
-                  </div>
-                  <table>
-                    <thead className="tables">
-                      <tr>
-                        <th>Item Code</th>
-                        <th>Item Name</th>
-                        <th>Item Price</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                    {filteredDataItem.map((item, index) => (
-                      // eslint-disable-next-line react/jsx-key
-                      <tr className="trcus cursor-pointer">
-                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.itemCode}
-                        </td>
-                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.itemName}
-                        </td>
-                        <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                          {item.sellingPrice}
-                        </td>
-                      </tr>
-                    ))}
-                    </tbody>
-                  </table> */}
-                    
                     <div>
                       <div className="mb-2 text-[13px] flex gap-5">
                         <div>
@@ -1407,17 +1342,6 @@ export default function SalesOrder() {
                               </tr>
                             ))
                           }
-                        {/* {filteredDataItem.map((item, index) => (
-                          // eslint-disable-next-line react/jsx-key
-                          <tr className="trcus cursor-pointer">
-                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                              {item.itemCode}
-                            </td>
-                            <td className="tdcus" key={index} onClick={() => handleItemClick(item)}>
-                              {item.itemName}
-                            </td>
-                          </tr>
-                        ))} */}
 
                         </tbody>
                       </table>
@@ -1525,7 +1449,7 @@ export default function SalesOrder() {
               <div className="grid grid-cols-2 text-right">
                 <label htmlFor="documentnumber" className="text-right">Total Amount Before VAT</label>
                 <div>
-                  <input value={totalBeforeVat} type="text" />
+                  <input value={totalAfterVat} type="text" />
                 </div>
               </div>
               <div className="grid grid-cols-2">
@@ -1537,7 +1461,7 @@ export default function SalesOrder() {
               <div className="grid grid-cols-2">
                 <label htmlFor="documentnumber">Total After VAT</label>
                 <div>
-                  <input value={totalAfterVat} type="text" />
+                  <input value={totalBeforeVat} type="text" />
                 </div>
               </div>
             </div>
