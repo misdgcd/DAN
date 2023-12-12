@@ -66,6 +66,7 @@ export default function SalesOrder() {
       quantity: 0,
       uom: '',
       uomConversion: '',
+      excludeBO: 'N',
       location: '',
       price: 0,
       inventoryStatus: '',
@@ -94,7 +95,7 @@ export default function SalesOrder() {
   };
 
   const onAddheaderItems = async () => {
-    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/14/${warehouseCode}/C000174`);
+    const item = await axios.get(`${process.env.NEXT_PUBLIC_IP}/item/${priceListNum}/${warehouseCode}/C000174`);
     setItemDataList(item.data);
   };
   
@@ -106,7 +107,7 @@ export default function SalesOrder() {
 
   const onAddHeaderWareHouse = async (itemcode: any, name: any, uom: any) => {
     try{
-      const warehouse = await axios.get(`${process.env.NEXT_PUBLIC_IP}/warehouse-soh/${itemcode}/${name}/4`)
+      const warehouse = await axios.get(`${process.env.NEXT_PUBLIC_IP}/warehouse-soh/${itemcode}/${name}/${brandID}`)
       setWareHouseList(warehouse.data);
     }catch(e){
 
@@ -158,6 +159,7 @@ export default function SalesOrder() {
         quantity: 0,
         uom: '',
         uomConversion: '',
+        excludeBO: 'N',
         location: '',
         price: 0,
         inventoryStatus: '',
@@ -266,6 +268,7 @@ export default function SalesOrder() {
       quantity: 0,
       uom: '',
       uomConversion: '',
+      excludeBO: 'N',
       location: '',
       price: 0,
       inventoryStatus: '',
@@ -435,7 +438,8 @@ export default function SalesOrder() {
         taxCodeDataNow = e.TaxCode
       })
 
-      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${taxCodeDataNow}/${item.ItemCode}/${warehouseCode}/1`);
+
+      const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/${priceListNum}/${taxCodeDataNow}/${item.ItemCode}/${warehouseCode}/1`);
       const lowerboundArr = lowerbound.data;
       const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
       const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];      
@@ -511,23 +515,26 @@ export default function SalesOrder() {
         belCost = "N";
       }
 
-      if(parseFloat(sellingAfterDis) < parseFloat(sellingAfterDisTemp)){
+      console.log("enter", sellingAfterDis, item.cost, value)
+
+      if(parseFloat(value) < parseFloat(sellingAfterDisTemp)){
         console.log("Y")
         updatedTableData[rowIndex] = {
           ...item,
           grossTotal: value * item.quantity,
           belVolDisPrice: "Y",
-          belCost: belCost,
-          sellingPriceAfterDiscount: value * item.quantity
+          sellingPriceAfterDiscount: value,
+          belCost: belCost
         };
+
         setTableData(updatedTableData);
       }else{
         updatedTableData[rowIndex] = {
           ...item,
           grossTotal: value * item.quantity,
           belVolDisPrice: "N",
-          sellingPriceAfterDiscount: value * item.quantity,
-          belCost: belCost,
+          sellingPriceAfterDiscount: value,
+          belCost: belCost
         };
         setTableData(updatedTableData);
       }
@@ -553,7 +560,7 @@ export default function SalesOrder() {
 
     try{
 
-      const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/4/${disPriceBefDis}/${disCardCode}/${disItemCode}/${quantity}/${disUOM}/${disLowerBound}/N/N/N/N/${disTaxCode}`);
+      const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${disPriceBefDis}/${disCardCode}/${disItemCode}/${quantity}/${disUOM}/${disLowerBound}/N/N/N/N/${disTaxCode}`);
     
       const disPriceArr = disPrice.data;
 
@@ -564,8 +571,7 @@ export default function SalesOrder() {
       const cost = await axios.get(`${process.env.NEXT_PUBLIC_IP}/cost/${item.itemCode}/${warehouseCode}`);
       const costArr = cost.data;
 
-      console.log("Costtt" , costArr[0]['Cost'], item.sellingPriceAfterDiscount);
-
+    
       let belowCostBool = "";
 
       if(item.sellingPriceAfterDiscount < costArr[0]['Cost']){
@@ -574,15 +580,23 @@ export default function SalesOrder() {
         belowCostBool = "Y";
       }
 
+      const quantityXuomConversion = quantity *item.uomConversion;
+
+      const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${disItemCode}/${warehouseCode}/${quantityXuomConversion}/${item.excludeBO}`);
+      const stocksAvailabilityArr = stocksAvailability.data;
+
+      console.log("stocks", quantityXuomConversion)
+
       updatedTableData[rowIndex] = {
         ...item,
-        quantity,
+        quantity: quantity,
         discountRate: disRateFor,
         cost: costArr[0]['Cost'] * item.uomConversion,
         sellingPriceAfterDiscount: disPriceArr[0]['DiscPrice'],
         sellingPriceAfterDiscountTemp: disPriceArr[0]['DiscPrice'],
         grossTotal: quantity * item.sellingPriceAfterDiscount,
-        taxAmount: (quantity * item.sellingPriceAfterDiscount) * 0.12
+        taxAmount: (quantity * item.sellingPriceAfterDiscount) * 0.12,
+        inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
       };
       setTableData(updatedTableData);
       setSellingPriceAfterDis(item.sellingPriceAfterDiscount);
@@ -591,6 +605,24 @@ export default function SalesOrder() {
       
     }
   };
+
+  const handleChangeExcludeBO = async (value: any, rowIndex: any) => {
+
+    const updatedTableData = [...tableData];
+    const item = updatedTableData[rowIndex];
+    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${warehouseCode}/${item.quantity}/${value}`);
+    const stocksAvailabilityArr = stocksAvailability.data;
+
+    updatedTableData[rowIndex] = {
+      ...item,
+      excludeBO: value,
+      inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
+    };
+
+    setTableData(updatedTableData);
+    console.log(value, item.quantity, stocksAvailabilityArr[0]['StockAvailable'])
+
+  }
 
   const handleDiscountRateChange = (rowIndex: any, discountRates: any) => {
     const updatedTableData = [...tableData];
@@ -631,13 +663,27 @@ export default function SalesOrder() {
     const uomitemCode = item['itemCode'];
     const uomtaxAmout = item['taxAmount'];
 
-    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/14/${uomtaxCode}/${uomitemCode}/${warehouseCode}/${BaseQty}`);
+    const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/${priceListNum}/${uomtaxCode}/${uomitemCode}/${warehouseCode}/${BaseQty}`);
     const lowerboundArr = lowerbound.data;
     const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
     
-    const srp = await axios.get(`${process.env.NEXT_PUBLIC_IP}/srp/${uomitemCode}/${BaseQty}/${UomCode}/${uomtaxCode}/${lowerBoundFinalItem}/${cardCodedata}/14`);
+    const srp = await axios.get(`${process.env.NEXT_PUBLIC_IP}/srp/${uomitemCode}/${BaseQty}/${UomCode}/${uomtaxCode}/${lowerBoundFinalItem}/${cardCodedata}/${priceListNum}`);
     const srpdata = srp.data;
 
+    const quantityXuomConversion = item.quantity * BaseQty;
+
+    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${warehouseCode}/${quantityXuomConversion}/${item.excludeBO}`);
+    const stocksAvailabilityArr = stocksAvailability.data;
+
+    let quantityChange = 0;
+
+    if(item.quantity == 0){
+      quantityChange = 0;
+    }else{
+      quantityChange = item.quantity;
+    }
+
+    console.log(item.sellingPriceAfterDiscountTemp, "dan")
 
     updatedTableData[UOMListIndex] = {
       ...item,
@@ -646,7 +692,9 @@ export default function SalesOrder() {
       lowerBound: lowerBoundFinalItem,
       sellingPriceBeforeDiscount: srpdata[0]['SRP'],
       grossTotal: (item.price * BaseQty) * item.quantity,
-      quantity: 0,
+      quantity: quantityChange,
+      setSellingPriceAfterDis: item.sellingPriceAfterDiscountTemp * BaseQty,
+      inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
     };
     setTableData(updatedTableData);
     setOpenOUMPanel(!openOUMPanel);
@@ -823,7 +871,7 @@ export default function SalesOrder() {
           <div className="grid grid-cols-2"> 
             <label htmlFor="documentnumber">Document Number</label>
             <div>
-              <input type="text"/> <button className="w-[20px]  bg-slate-200" onClick={handleShowDoc}>=</button>
+              <input value={0} type="text"/>
             </div>
 
             {/* Document Number */}
@@ -895,6 +943,7 @@ export default function SalesOrder() {
                 <th>Item Name</th>
                 <th>Unit of Measure (UOM)</th>
                 <th>UOM Conversion</th>
+                <th>Exclude BO</th>
                 <th>Warehouse</th>
                 <th>Quantity</th>
                 <th>Inventory Status</th>
@@ -962,6 +1011,12 @@ export default function SalesOrder() {
                     rowData.uom == "" ? '' : rowData.uomConversion
                   }
                 </td>
+                  <td>
+                  <select name="" onChange={(e)=>handleChangeExcludeBO(e.target.value, rowIndex)} id="" className="w-[100px] h-[20px]">
+                      <option value="N" selected>N</option>
+                      <option value="Y">Y</option>
+                  </select>
+                  </td>
                 <td>
                   {
                     rowData.uom == "" ? '' : (
@@ -982,14 +1037,19 @@ export default function SalesOrder() {
                 </td>
                 <td>
                   <input
-                    className="border-transparent"
+                    className=" border-l-white border-t-white border-r-white"
                     type=""
-                    value={rowData.quantity}
                     placeholder="0"
                     onChange={(e) => handleQuantityChange(rowIndex, e.target.value)}
                   />
                 </td>
-                <td></td>
+                <td className={
+                  rowData.quantity == 0 ? 'bg-white' : rowData.inventoryStatus === "Available" ? "bg-green-200" : rowData.inventoryStatus === "Out of Stocks" ? "bg-red-200" : ""
+                }>
+                  {
+                    rowData.quantity == 0 ? '' : rowData.inventoryStatus
+                  }
+                </td>
                 <td>
                   {
                     rowData.quantity == 0 ? '' : localCurrency.format(rowData.price)
@@ -1018,7 +1078,7 @@ export default function SalesOrder() {
                       <div className="flex gap-2">
                         <div>
                           <input
-                          className="w-[100px]"
+                          className="w-[100px] border-l-white border-t-white border-r-white"
                           type="number"
                           id={rowData.itemCode}
                           onClick={(e)=>changeTextBoxValue(rowIndex)}
@@ -1061,7 +1121,9 @@ export default function SalesOrder() {
                     rowData.quantity == 0 ? '' : rowData.sellingPriceAfterDiscount
                   }
                 </td> */}
-                <td>
+                <td className={
+                  rowData.belVolDisPrice == "Y" ? "bg-red-200 " : ""
+                }> 
                   {
                     rowData.quantity == 0 ? '' : rowData.belVolDisPrice
                   }
@@ -1071,7 +1133,11 @@ export default function SalesOrder() {
                     Math.floor(rowData.cost).toFixed(2)
                   }
                 </td>
-                <td>
+                <td
+                  className={
+                    rowData.belCost == "Y" ? "bg-red-200" : ""
+                  }
+                >
                   {
                     rowData.belCost
                   }
@@ -1477,7 +1543,7 @@ export default function SalesOrder() {
       </div>
       {
         <div className="text-left">
-          <pre>{JSON.stringify(tableData, null, 2)}</pre>
+          {/* <pre>{JSON.stringify(tableData, null, 2)}</pre> */}
         </div>
       }
     </>
