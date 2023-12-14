@@ -7,8 +7,12 @@ import { height } from "@fortawesome/free-brands-svg-icons/fa42Group";
 import Draggable from "react-draggable";
 import { v4 as uuidv4 } from 'uuid';
 import axios from "axios";
+import { useRef } from 'react';
+import { table } from "console";
 
 export default function SalesOrder() {
+
+  const inputRef = useRef(null);
 
   const [customerList, setCustomerDataList] = useState([]);
   const [itemList, setItemDataList] = useState([]);
@@ -86,6 +90,12 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: 0,
       selected: false,
+      modeOfPayment: {
+        creditcard: "N",
+        debit: "N",
+        pdc: "N",
+        po: "N"
+      },
     }
   ]);
 
@@ -179,6 +189,12 @@ export default function SalesOrder() {
         scPwdDiscount: '',
         grossTotal: 0,
         selected: false,
+        modeOfPayment: {
+          creditcard: "N",
+          debit: "N",
+          pdc: "N",
+          po: "N"
+        },
       },
     ]);
 
@@ -261,6 +277,9 @@ export default function SalesOrder() {
   }
 
   const handleRemoveRow = (rowIndex: any) => {
+
+    countAllItem = countAllItem - 1;
+    
     let emptyData = 
     {
       itemCode: '',
@@ -288,6 +307,12 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: '',
       selected: false,
+      modeOfPayment: {
+        creditcard: "N",
+        debit: "N",
+        pdc: "N",
+        po: "N"
+      },
     }
 
     
@@ -421,8 +446,32 @@ export default function SalesOrder() {
     setSelectedRowIndex(rowIndex);
   }
   
+  const [quantityData, setquantityData] = useState([
+    {
+      itemCode: '',
+      tempQuantity: 0,
+    }
+  ]);
+
+  let countAllItem = 0;
+
   const handleItemClick = async (item: any) => {
+
+    countAllItem = countAllItem + 1;
+
     if (selectedRowIndex !== null) {
+
+      const updateQuantityData = [...quantityData];
+
+      updateQuantityData[selectedRowIndex] = {
+        ...updateQuantityData[selectedRowIndex],
+        itemCode: item.itemCode,
+        tempQuantity: 0
+      }
+
+      setquantityData(updateQuantityData);
+
+      console.log(updateQuantityData, "qdata")
 
       const updatedTableData = [...tableData];
 
@@ -469,6 +518,8 @@ export default function SalesOrder() {
         setSelectedRowIndex(null);
         setOpenItemTablePanel(!openItemTablePanel);
         setSellingPriceAfterDis(item.Price);
+
+        console.log("New Data", updatedTableData);
 
         const disCardCode = cardCodedata;
         const disItemCode = item.ItemCode;
@@ -544,6 +595,12 @@ export default function SalesOrder() {
     }
   }
 
+  const handleSelectAll = () => {
+    if (inputRef.current) {
+      inputRef.current.select();
+    }
+  };
+
   const handleQuantityChange =  async (rowIndex: any, quantity: any) => {
     
     const updatedTableData = [...tableData];
@@ -571,7 +628,6 @@ export default function SalesOrder() {
       const cost = await axios.get(`${process.env.NEXT_PUBLIC_IP}/cost/${item.itemCode}/${warehouseCode}`);
       const costArr = cost.data;
 
-    
       let belowCostBool = "";
 
       if(item.sellingPriceAfterDiscount < costArr[0]['Cost']){
@@ -582,7 +638,7 @@ export default function SalesOrder() {
 
       const quantityXuomConversion = quantity *item.uomConversion;
 
-      const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${disItemCode}/${warehouseCode}/${quantityXuomConversion}/${item.excludeBO}`);
+      const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${disItemCode}/${item.location}/${quantityXuomConversion}/${item.excludeBO}`);
       const stocksAvailabilityArr = stocksAvailability.data;
 
       console.log("stocks", quantityXuomConversion)
@@ -606,11 +662,12 @@ export default function SalesOrder() {
     }
   };
 
+
   const handleChangeExcludeBO = async (value: any, rowIndex: any) => {
 
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
-    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${warehouseCode}/${item.quantity}/${value}`);
+    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${item.location}/${item.quantity}/${value}`);
     const stocksAvailabilityArr = stocksAvailability.data;
 
     updatedTableData[rowIndex] = {
@@ -627,8 +684,11 @@ export default function SalesOrder() {
   const handleDiscountRateChange = (rowIndex: any, discountRates: any) => {
     const updatedTableData = [...tableData];
     const item = updatedTableData[rowIndex];
+
     const amount = ((discountRates/100) * item.sellingPriceBeforeDiscount);
+
     const finalAmount = item.sellingPriceBeforeDiscount - amount;
+
     updatedTableData[rowIndex] = {
       ...item,
       discountRate: discountRates,
@@ -655,7 +715,7 @@ export default function SalesOrder() {
   }).slice(0, 50);
 
   const handleUOM = async (rowindex: any, BaseQty: any, UomCode: any) => {
-
+    
     const updatedTableData = [...tableData];
     const item = updatedTableData[UOMListIndex];
 
@@ -672,18 +732,22 @@ export default function SalesOrder() {
 
     const quantityXuomConversion = item.quantity * BaseQty;
 
-    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${warehouseCode}/${quantityXuomConversion}/${item.excludeBO}`);
-    const stocksAvailabilityArr = stocksAvailability.data;
+    let warehousecurrent = "";
 
-    let quantityChange = 0;
-
-    if(item.quantity == 0){
-      quantityChange = 0;
+    if(item.location == ""){
+      warehousecurrent = warehouseCode;
     }else{
-      quantityChange = item.quantity;
+      warehousecurrent = item.location;
     }
 
-    console.log(item.sellingPriceAfterDiscountTemp, "dan")
+    const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${UomCode}/${item.lowerBound}/N/N/N/N/${item.taxCode}`);
+    const disPriceArr = disPrice.data;
+    const disAfterPrice = disPriceArr[0]['DiscPrice'];
+
+
+    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${item.location}/${quantityXuomConversion}/${item.excludeBO}`);
+    const stocksAvailabilityArr = stocksAvailability.data;
+
 
     updatedTableData[UOMListIndex] = {
       ...item,
@@ -692,15 +756,24 @@ export default function SalesOrder() {
       lowerBound: lowerBoundFinalItem,
       sellingPriceBeforeDiscount: srpdata[0]['SRP'],
       grossTotal: (item.price * BaseQty) * item.quantity,
-      quantity: quantityChange,
+      quantity: 0,
       setSellingPriceAfterDis: item.sellingPriceAfterDiscountTemp * BaseQty,
       inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
     };
     setTableData(updatedTableData);
     setOpenOUMPanel(!openOUMPanel);
+    
+    // let quantityInp = document.getElementById('quantityInput');
+    // quantityInp?.setAttribute('values', "0")
+
+    var quantityChange = document.getElementById("quantityInput");
+    quantityChange?.setAttribute("placeholder", 33)
+
+    console.log(quantityChange)
 
   }
 
+  
   // Mode of Releasing Function
   const modeReleasing = (value: any) => {
     const updatedTableData = [...tableData];
@@ -735,6 +808,340 @@ export default function SalesOrder() {
     setTableData(updatedTableData);
     setOpenModRelTablePanel(!openModRelTablePanel);
   }
+
+  const handleWarehoueChange = async (rowIndex: any, itemdata: any) => {
+
+    const updatedTableData = [...tableData];
+    const item = updatedTableData[selectedRowIndex];
+    
+    const quantityXuomConversion = item.quantity * item.uomConversion;
+    
+    const stocksAvailability = await axios.get(`${process.env.NEXT_PUBLIC_IP}/stocks-availability/0/${item.itemCode}/${itemdata}/${quantityXuomConversion}/${item.excludeBO}`);
+    const stocksAvailabilityArr = stocksAvailability.data;
+
+    console.log(stocksAvailabilityArr[0]['StockAvailable'])
+
+    updatedTableData[selectedRowIndex] = {
+      ...item,
+      location: itemdata,
+      inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
+    };
+    setTableData(updatedTableData);
+
+  }
+
+  const [isCheckedCreditCard, setIsCheckedCreditCard] = useState(false);
+  const [isCheckedDebit, setIsCheckedDebit] = useState(false);
+  const [isCheckedPDC, setIsCheckedPDC] = useState(false);
+  const [isCheckedPO, setIsCheckedPO] = useState(false);
+
+  const [creditcardstatus, setcreditcardstatus] = useState("N");
+  const [debitstatus, setdebitstatus] = useState("N");
+  const [pdcstatus, setpdcstatus] = useState("N");
+  const [postatus, setpostatus] = useState("N");
+
+
+  const handleCreditCard = async (event: any) => {
+    setIsCheckedCreditCard(event.target.checked);
+
+    if(isCheckedCreditCard != true){
+
+      setcreditcardstatus("Y");
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+        
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
+          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+        };
+
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+
+        
+
+      }
+
+    }else{
+
+      setcreditcardstatus("N");
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+
+        console.log(disRateFor, "bilang")
+
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: disAfterPrice,
+          sellingPriceAfterDiscountTemp: disAfterPrice
+        };
+
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+        
+      }
+
+    }
+
+    console.log("statusshit", creditcardstatus, debitstatus, pdcstatus, postatus)
+  };
+
+  const handleDebit = async (event: any) => {
+    setIsCheckedDebit(event.target.checked);
+
+    if(isCheckedDebit != true){
+
+      setdebitstatus("Y");
+
+      console.log(tableData.length, "bilang")
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+        
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
+          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+        };
+
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+
+      }
+
+    }else{
+
+      setdebitstatus("N");
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+
+        console.log(disRateFor, "bilang")
+
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: disAfterPrice,
+          sellingPriceAfterDiscountTemp: disAfterPrice
+        };
+       
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+        
+      }
+
+    }
+
+    console.log("statusshit2", creditcardstatus, debitstatus, pdcstatus, postatus)
+  };
+
+  const handlePDC = async (event: any) => {
+    setIsCheckedPDC(event.target.checked);
+
+    if(isCheckedPDC != true){
+
+      setpdcstatus("Y");
+
+      console.log(tableData.length, "bilang")
+
+      const tableDatalen = tableData.length;
+
+      setTimeout(async () => {
+
+        for(let i=0; i<tableDatalen; i++){
+
+          const updatedTableData = [...tableData];
+          const item = updatedTableData[i];
+  
+          const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+          const disPriceArr = disPrice.data;
+  
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+        
+          const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+          
+          updatedTableData[i] = {
+            ...item,
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
+            sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+          };
+          
+          setTableData(updatedTableData);
+  
+        }
+        
+      }, 500);
+
+    }else{
+
+      setpdcstatus("N");
+
+      const tableDatalen = tableData.length;
+
+      setTimeout(async () => {
+
+        for(let i=0; i<tableDatalen; i++){
+
+          const updatedTableData = [...tableData];
+          const item = updatedTableData[i];
+  
+          const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+          const disPriceArr = disPrice.data;
+  
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+        
+          const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+  
+          console.log(disRateFor, "bilang")
+  
+          updatedTableData[i] = {
+            ...item,
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: disAfterPrice,
+            sellingPriceAfterDiscountTemp: disAfterPrice
+          };
+          
+          setTableData(updatedTableData);
+          
+        }
+        
+      }, 500);
+
+      
+
+    }
+
+    console.log("statusshit3", creditcardstatus, debitstatus, pdcstatus, postatus)
+  };
+
+  const handlePO = async (event: any) => {
+    setIsCheckedPO(event.target.checked);
+
+    if(isCheckedPO != true){
+
+      setpostatus("Y");
+
+      console.log(tableData.length, "bilang")
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+        
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
+          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+        };
+        
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+
+      }
+
+    }else{
+
+      setpostatus("N");
+
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const updatedTableData = [...tableData];
+        const item = updatedTableData[i];
+
+        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
+        const disPriceArr = disPrice.data;
+
+        const disAfterPrice = disPriceArr[0]['DiscPrice'];
+      
+        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
+
+        console.log(disRateFor, "bilang")
+
+        updatedTableData[i] = {
+          ...item,
+          discountRate: disRateFor,
+          sellingPriceAfterDiscount: disAfterPrice,
+          sellingPriceAfterDiscountTemp: disAfterPrice
+        };
+       
+        setTimeout(() => {
+          setTableData(updatedTableData);
+        }, 500);
+        
+      }
+
+    }
+
+    console.log("statusshit4", creditcardstatus, debitstatus, pdcstatus, postatus)
+  };
 
   return (
     <>
@@ -1012,7 +1419,7 @@ export default function SalesOrder() {
                   }
                 </td>
                   <td>
-                  <select name="" onChange={(e)=>handleChangeExcludeBO(e.target.value, rowIndex)} id="" className="w-[100px] h-[20px]">
+                  <select name="" onChange={(e)=>handleChangeExcludeBO(e.target.value, rowIndex)} className="w-[100px] h-[20px]">
                       <option value="N" selected>N</option>
                       <option value="Y">Y</option>
                   </select>
@@ -1038,9 +1445,13 @@ export default function SalesOrder() {
                 <td>
                   <input
                     className=" border-l-white border-t-white border-r-white"
-                    type=""
+                    type="text"
                     placeholder="0"
+                    // ref={inputRef}
                     onChange={(e) => handleQuantityChange(rowIndex, e.target.value)}
+                    id="quantityInput"
+                    onClick={handleSelectAll}
+                    value={rowData.quantity}
                   />
                 </td>
                 <td className={
@@ -1122,7 +1533,7 @@ export default function SalesOrder() {
                   }
                 </td> */}
                 <td className={
-                  rowData.belVolDisPrice == "Y" ? "bg-red-200 " : ""
+                  rowData.belVolDisPrice == "Y" ? "bg-red-200 " : "bg-green-200"
                 }> 
                   {
                     rowData.quantity == 0 ? '' : rowData.belVolDisPrice
@@ -1135,7 +1546,7 @@ export default function SalesOrder() {
                 </td>
                 <td
                   className={
-                    rowData.belCost == "Y" ? "bg-red-200" : ""
+                    rowData.belCost == "Y" ? "bg-red-200" : "bg-green-200"
                   }
                 >
                   {
@@ -1393,19 +1804,19 @@ export default function SalesOrder() {
                             WareHouseList.map((item, index)=>(
                               // eslint-disable-next-line react/jsx-key
                               <tr>
-                                <td className="tdcus" key={index}>
+                                <td className="tdcus" key={index} onClick={(e)=>handleWarehoueChange(index, item.WhsCode)}>
                                     {item.WhsCode}
                                 </td>
-                                <td className="tdcus" key={index}>
+                                <td className="tdcus" key={index} onClick={(e)=>handleWarehoueChange(index, item.WhsCode)}>
                                     {item.WhsName}
                                 </td>
-                                <td className="tdcus" key={index}>
+                                <td className="tdcus" key={index} onClick={(e)=>handleWarehoueChange(index, item.WhsCode)}>
                                     {item.Availability}
                                 </td>
-                                <td className="tdcus" key={index}>
+                                <td className="tdcus" key={index} onClick={(e)=>handleWarehoueChange(index, item.WhsCode)}>
                                     {item.OnHand}
                                 </td>
-                                <td className="tdcus" key={index}>
+                                <td className="tdcus" key={index} onClick={(e)=>handleWarehoueChange(index, item.WhsCode)}>
                                     {item.Committed}
                                 </td>
                               </tr>
@@ -1436,8 +1847,9 @@ export default function SalesOrder() {
         }
         
       </div>
-      <div className="text-left p-2 grid grid-cols-2 col1 text-[14px] mt-5">
+          <div className="text-left p-2 grid grid-cols-2 col1 text-[14px] mt-5">
           <div className="w-[300px] ">
+            
             <div className="grid grid-cols-2">
               <label htmlFor="documentnumber">Mode of Payment:</label>
               <div className="">
@@ -1446,20 +1858,36 @@ export default function SalesOrder() {
                   Cash
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedCreditCard}
+                    onChange={handleCreditCard}
+                  />
                   Credit Card
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedDebit}
+                    onChange={handleDebit}
+                  />
                   Debit Card
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
-                  Dated Check
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedPDC}
+                    onChange={handlePDC}
+                  />
+                  PDC
+                </div>
+                <div className="flex justify-start gap-2">
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedPO}
+                    onChange={handlePO}
+                  />
+                  PO
                 </div>
                 <div className="flex justify-start gap-2 w-[200px]">
                   <input className="w-[20px]" type="checkbox" />
-                  Dated Check Check
+                  Dated Check
                 </div>
                 <div className="flex justify-start gap-2">
                   <input className="w-[20px]" type="checkbox" />
@@ -1476,6 +1904,7 @@ export default function SalesOrder() {
 
               </div>
             </div>
+
             <div className="grid grid-cols-2">
               <label htmlFor="documentnumber">Mode of Releasing</label>
               <div>
