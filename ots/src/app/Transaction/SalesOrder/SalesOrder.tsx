@@ -90,12 +90,10 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: 0,
       selected: false,
-      modeOfPayment: {
-        creditcard: "N",
-        debit: "N",
-        pdc: "N",
-        po: "N"
-      },
+      creditcard: "N",
+      debit: "N",
+      pdc: "N",
+      po: "N"
     }
   ]);
 
@@ -189,12 +187,10 @@ export default function SalesOrder() {
         scPwdDiscount: '',
         grossTotal: 0,
         selected: false,
-        modeOfPayment: {
-          creditcard: "N",
-          debit: "N",
-          pdc: "N",
-          po: "N"
-        },
+        creditcard: "N",
+        debit: "N",
+        pdc: "N",
+        po: "N"
       },
     ]);
 
@@ -307,12 +303,10 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: '',
       selected: false,
-      modeOfPayment: {
-        creditcard: "N",
-        debit: "N",
-        pdc: "N",
-        po: "N"
-      },
+      creditcard: "N",
+      debit: "N",
+      pdc: "N",
+      po: "N"
     }
 
     
@@ -840,79 +834,116 @@ export default function SalesOrder() {
   const [pdcstatus, setpdcstatus] = useState("N");
   const [postatus, setpostatus] = useState("N");
 
+  const [ccstatus, setccstatus] = useState(false);
 
   const handleCreditCard = async (event: any) => {
     setIsCheckedCreditCard(event.target.checked);
 
     if(isCheckedCreditCard != true){
 
-      setcreditcardstatus("Y");
+      setccstatus(true);
 
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
         
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
-          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+          creditcard: "Y"
         };
 
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
+        setTableData(updatedTableData);
 
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done CC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
         
+          updatedTableData[i] = {
+            ...itemnew,
+            creditcard: "Y",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
+            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
+          };
+          setTableData(updatedTableData);
 
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
       }
 
     }else{
 
-      setcreditcardstatus("N");
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
+        setccstatus(true);
+
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
-
-        console.log(disRateFor, "bilang")
-
+        
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: disAfterPrice,
-          sellingPriceAfterDiscountTemp: disAfterPrice
+          creditcard: "N"
         };
 
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
-        
-      }
+        setTableData(updatedTableData);
 
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done CC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
+          updatedTableData[i] = {
+            ...itemnew,
+            creditcard: "N",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: disAfterPrice,
+            sellingPriceAfterDiscountTemp: disAfterPrice,
+          };
+          setTableData(updatedTableData);
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+      }
     }
 
-    console.log("statusshit", creditcardstatus, debitstatus, pdcstatus, postatus)
   };
 
   const handleDebit = async (event: any) => {
@@ -920,73 +951,109 @@ export default function SalesOrder() {
 
     if(isCheckedDebit != true){
 
-      setdebitstatus("Y");
+      setccstatus(true);
 
-      console.log(tableData.length, "bilang")
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
         
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
-          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+          debit: "Y"
         };
 
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
+        setTableData(updatedTableData);
 
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po,  "- Done Debit");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
+          updatedTableData[i] = {
+            ...itemnew,
+            debit: "Y",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
+            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
+          };
+          setTableData(updatedTableData);
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
       }
 
     }else{
 
-      setdebitstatus("N");
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
+        setccstatus(true);
+
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
-
-        console.log(disRateFor, "bilang")
-
+        
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: disAfterPrice,
-          sellingPriceAfterDiscountTemp: disAfterPrice
+          debit: "N"
         };
-       
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
-        
-      }
 
+        setTableData(updatedTableData);
+
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done Debit");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
+          updatedTableData[i] = {
+            ...itemnew,
+            debit: "N",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: disAfterPrice,
+            sellingPriceAfterDiscountTemp: disAfterPrice,
+          };
+          setTableData(updatedTableData);
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+      }
     }
 
-    console.log("statusshit2", creditcardstatus, debitstatus, pdcstatus, postatus)
   };
 
   const handlePDC = async (event: any) => {
@@ -994,79 +1061,109 @@ export default function SalesOrder() {
 
     if(isCheckedPDC != true){
 
-      setpdcstatus("Y");
+      setccstatus(true);
 
-      console.log(tableData.length, "bilang")
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
-      setTimeout(async () => {
+      for(let i=0; i<tableDatalen; i++){
 
-        for(let i=0; i<tableDatalen; i++){
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          pdc: "Y"
+        };
 
-          const updatedTableData = [...tableData];
-          const item = updatedTableData[i];
-  
-          const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-          const disPriceArr = disPrice.data;
-  
+        setTableData(updatedTableData);
+
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
           const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
         
-          const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
-          
           updatedTableData[i] = {
-            ...item,
+            ...itemnew,
+            pdc: "Y",
             discountRate: disRateFor,
-            sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
-            sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
+            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
           };
-          
           setTableData(updatedTableData);
-  
-        }
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
         
-      }, 500);
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+      }
 
     }else{
 
-      setpdcstatus("N");
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
-      setTimeout(async () => {
+      for(let i=0; i<tableDatalen; i++){
 
-        for(let i=0; i<tableDatalen; i++){
+        setccstatus(true);
 
-          const updatedTableData = [...tableData];
-          const item = updatedTableData[i];
-  
-          const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-          const disPriceArr = disPrice.data;
-  
-          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+        const item = updatedTableData[i];
         
-          const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
-  
-          console.log(disRateFor, "bilang")
-  
+        updatedTableData[i] = {
+          ...item,
+          pdc: "N"
+        };
+
+        setTableData(updatedTableData);
+
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
           updatedTableData[i] = {
-            ...item,
+            ...itemnew,
+            pdc: "N",
             discountRate: disRateFor,
             sellingPriceAfterDiscount: disAfterPrice,
-            sellingPriceAfterDiscountTemp: disAfterPrice
+            sellingPriceAfterDiscountTemp: disAfterPrice,
           };
-          
           setTableData(updatedTableData);
+
+          setccstatus(false);
           
-        }
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
         
-      }, 500);
+        // console.log(disPriceArr, "disarr")
 
-      
-
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+      }
     }
 
-    console.log("statusshit3", creditcardstatus, debitstatus, pdcstatus, postatus)
   };
 
   const handlePO = async (event: any) => {
@@ -1074,73 +1171,46 @@ export default function SalesOrder() {
 
     if(isCheckedPO != true){
 
-      setpostatus("Y");
-
-      console.log(tableData.length, "bilang")
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
         
+
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: item.sellingPriceBeforeDiscount,
-          sellingPriceAfterDiscountTemp: item.sellingPriceBeforeDiscount
+          po: "Y"
         };
         
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
+        setTableData(updatedTableData);
 
+        console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
       }
 
     }else{
 
-      setpostatus("N");
-
+      const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
       for(let i=0; i<tableDatalen; i++){
 
-        const updatedTableData = [...tableData];
         const item = updatedTableData[i];
-
-        const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceAfterDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${creditcardstatus}/${debitstatus}/${pdcstatus}/${postatus}/${item.taxCode}`);
-        const disPriceArr = disPrice.data;
-
-        const disAfterPrice = disPriceArr[0]['DiscPrice'];
-      
-        const disRateFor = ((item.sellingPriceAfterDiscount - disAfterPrice)/item.sellingPriceAfterDiscount)*100;
-
-        console.log(disRateFor, "bilang")
+        
 
         updatedTableData[i] = {
           ...item,
-          discountRate: disRateFor,
-          sellingPriceAfterDiscount: disAfterPrice,
-          sellingPriceAfterDiscountTemp: disAfterPrice
+          po: "N"
         };
-       
-        setTimeout(() => {
-          setTableData(updatedTableData);
-        }, 500);
         
+        setTableData(updatedTableData);
+
+        console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
       }
 
     }
 
-    console.log("statusshit4", creditcardstatus, debitstatus, pdcstatus, postatus)
   };
 
   return (
@@ -1458,7 +1528,7 @@ export default function SalesOrder() {
                   rowData.quantity == 0 ? 'bg-white' : rowData.inventoryStatus === "Available" ? "bg-green-200" : rowData.inventoryStatus === "Out of Stocks" ? "bg-red-200" : ""
                 }>
                   {
-                    rowData.quantity == 0 ? '' : rowData.inventoryStatus
+                    rowData.quantity == 0 ? '' : rowData.inventoryStatus + " " + rowData.creditcard + " " + rowData.debit + " " + rowData.pdc + " " + rowData.po
                   }
                 </td>
                 <td>
@@ -1861,6 +1931,7 @@ export default function SalesOrder() {
                   <input className="w-[20px]" type="checkbox" 
                     checked={isCheckedCreditCard}
                     onChange={handleCreditCard}
+                    disabled={ccstatus}
                   />
                   Credit Card
                 </div>
@@ -1868,6 +1939,7 @@ export default function SalesOrder() {
                   <input className="w-[20px]" type="checkbox" 
                     checked={isCheckedDebit}
                     onChange={handleDebit}
+                    disabled={ccstatus}
                   />
                   Debit Card
                 </div>
@@ -1875,6 +1947,7 @@ export default function SalesOrder() {
                   <input className="w-[20px]" type="checkbox" 
                     checked={isCheckedPDC}
                     onChange={handlePDC}
+                    disabled={ccstatus}
                   />
                   PDC
                 </div>
@@ -1882,6 +1955,7 @@ export default function SalesOrder() {
                   <input className="w-[20px]" type="checkbox" 
                     checked={isCheckedPO}
                     onChange={handlePO}
+                    disabled={ccstatus}
                   />
                   PO
                 </div>
