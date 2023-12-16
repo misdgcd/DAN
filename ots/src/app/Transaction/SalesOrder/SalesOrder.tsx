@@ -97,6 +97,17 @@ export default function SalesOrder() {
     }
   ]);
 
+
+  const [finalTotalList, setfinalTotalList] = useState([
+    {
+      documentNum: "",
+      modeOfPayment: "",
+      totalVal: 0,
+      totalBeforeVat: 0,
+      totalAfterVat: 0
+    }
+  ]);
+
   const onAddHeader = async () => {
     const customers = await axios.get(`${process.env.NEXT_PUBLIC_IP}/customer`);
     setCustomerDataList(customers.data);
@@ -369,6 +380,20 @@ export default function SalesOrder() {
     setTotalBeforeVat(localCurrency.format(tempSum - taxAmountSum))
     settotalAfterVat(localCurrency.format(tempSum2))
     setTotalVat(localCurrency.format(taxAmountSum));
+
+    const updatefinalTotalList = [...finalTotalList];
+
+    updatefinalTotalList[0] = {
+      ...updatefinalTotalList[0],
+      documentNum: "",
+      modeOfPayment: "",
+      totalVal: taxAmountSum,
+      totalBeforeVat: tempSum - taxAmountSum,
+      totalAfterVat: tempSum2
+    }
+
+    setfinalTotalList(updatefinalTotalList);
+
 
   });
 
@@ -1171,6 +1196,8 @@ export default function SalesOrder() {
 
     if(isCheckedPO != true){
 
+      setccstatus(true);
+
       const updatedTableData = [...tableData];
       const tableDatalen = tableData.length;
 
@@ -1178,15 +1205,45 @@ export default function SalesOrder() {
 
         const item = updatedTableData[i];
         
-
         updatedTableData[i] = {
           ...item,
           po: "Y"
         };
-        
+
         setTableData(updatedTableData);
 
-        console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+        const item2 = updatedTableData[i];
+
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
+          updatedTableData[i] = {
+            ...itemnew,
+            po: "Y",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
+            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
+          };
+          setTableData(updatedTableData);
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
       }
 
     }else{
@@ -1196,22 +1253,142 @@ export default function SalesOrder() {
 
       for(let i=0; i<tableDatalen; i++){
 
+        setccstatus(true);
+
         const item = updatedTableData[i];
         
-
         updatedTableData[i] = {
           ...item,
           po: "N"
         };
-        
+
         setTableData(updatedTableData);
 
-        console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
-      }
+        const item2 = updatedTableData[i];
 
+        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
+          
+          const disPriceArr = response.data;
+          const disAfterPrice = disPriceArr[0]['DiscPrice'];
+          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
+
+          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
+
+          const newupdatedTableData = [...tableData];
+          const itemnew = newupdatedTableData[i];
+        
+          updatedTableData[i] = {
+            ...itemnew,
+            po: "N",
+            discountRate: disRateFor,
+            sellingPriceAfterDiscount: disAfterPrice,
+            sellingPriceAfterDiscountTemp: disAfterPrice,
+          };
+          setTableData(updatedTableData);
+
+          setccstatus(false);
+          
+        }).catch(e => {
+          console.error('Error credit card', e);
+        })
+    
+        
+        // console.log(disPriceArr, "disarr")
+
+        // console.log(item['creditcard'], item['debit'], item['pdc'], item['po'], "Mode")
+      }
+    }
+  };
+
+  const [showMessage, setshowMessage] = useState(false);
+  const [showMessage2, setshowMessage2] = useState(false);
+  const [showMessage3, setshowMessage3] = useState(false);
+
+  const [errMessage, seterrMessage] = useState("");
+  const [errMessage2, seterrMessage2] = useState("");
+  const [errMessage3, seterrMessage3] = useState("");
+
+  const [displayModeDrop, setDisplayModeDrop] = useState(false)
+
+  useEffect(()=>{
+
+    const allItemsArr = [...tableData];
+    const allItemsArrLen = allItemsArr.length;
+
+    let countAllreleasing = 0;
+
+    for(let i=0; i<allItemsArrLen; i++){
+      if(allItemsArr[i]['modeOfReleasing'] == ""){
+        
+      }else{
+        countAllreleasing++;
+      }
     }
 
-  };
+    if(countAllreleasing == allItemsArrLen){
+      setDisplayModeDrop(false)
+    }else{
+      setDisplayModeDrop(true)
+    }
+
+  })
+
+  const handleSaveDraft = () => {
+
+    const finalTotalListArr = [...finalTotalList];
+    const arrList = finalTotalListArr[0];
+
+    const allItemsArr = [...tableData];
+    const allItemsArrLen = allItemsArr.length;
+
+    let countAllreleasing = 0;
+
+    for(let i=0; i<allItemsArrLen; i++){
+      console.log(allItemsArr[i]['modeOfReleasing'])
+      if(allItemsArr[i]['modeOfReleasing'] == ""){
+        
+      }else{
+        countAllreleasing++;
+      }
+    }
+
+    if(countAllreleasing == allItemsArrLen){
+      setshowMessage2(false)
+    }else{
+      setshowMessage2(true)
+      seterrMessage2("Please make sure all products have mode of releasing");
+      setTimeout(()=>{
+        setshowMessage2(false)
+      }, 10000);
+    }
+
+    if(arrList.totalVal == 0){
+      setshowMessage(true)
+      seterrMessage("Please add atleast 1 product");
+      setTimeout(()=>{
+        setshowMessage(false)
+      }, 10000);
+    }
+
+    let countStatusInventory = 0;
+
+    for(let ii=0; ii<allItemsArrLen; ii++){
+      if(allItemsArr[ii]['inventoryStatus'] == "Out of Stocks"){
+        countStatusInventory++;
+      }
+    }
+
+    if(countStatusInventory <= 0){
+      setshowMessage3(false)
+    }else{
+      setshowMessage3(true)
+      seterrMessage3("Please make sure all products are available");
+      setTimeout(()=>{
+        setshowMessage3(false)
+      }, 10000);
+    }
+
+  }
 
   return (
     <>
@@ -1528,9 +1705,10 @@ export default function SalesOrder() {
                   rowData.quantity == 0 ? 'bg-white' : rowData.inventoryStatus === "Available" ? "bg-green-200" : rowData.inventoryStatus === "Out of Stocks" ? "bg-red-200" : ""
                 }>
                   {
-                    rowData.quantity == 0 ? '' : rowData.inventoryStatus + " " + rowData.creditcard + " " + rowData.debit + " " + rowData.pdc + " " + rowData.po
+                    rowData.quantity == 0 ? '' : rowData.inventoryStatus 
                   }
                 </td>
+                {/* + " " + rowData.creditcard + " " + rowData.debit + " " + rowData.pdc + " " + rowData.po */}
                 <td>
                   {
                     rowData.quantity == 0 ? '' : localCurrency.format(rowData.price)
@@ -1541,7 +1719,9 @@ export default function SalesOrder() {
                     rowData.quantity == 0 ? '' : localCurrency.format(rowData.sellingPriceBeforeDiscount)
                   }
                 </td>
-                <td>
+                <td className={
+                  rowData.discountRate <= 0 ? "bg-red-200 " : "bg-green-200"
+                }>
                   {/* <input
                     className="border-transparent"
                     type=""
@@ -1979,24 +2159,28 @@ export default function SalesOrder() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2">
-              <label htmlFor="documentnumber">Mode of Releasing</label>
-              <div>
-                <select className="selections" onChange={(e)=>modeReleasing(e.target.value)} name="" id="">
-                  <option value="" disabled selected>Please Select</option>
-                  <option value="Standard-Pick-up">Standard-Pick-up</option>
-                  <option value="Standard-Delivery">Standard-Delivery</option>
-                  <option value="Standard-Pick-up to Other Store">Standard-Pick-up to Other Store</option>
-                  <option value="Back Order-Pick-up">Back Order-Pick-up</option>
-                  <option value="Back Order-Delivery">Back Order-Delivery</option>
-                  <option value="Back Order-Pick-up to Other Store">Back Order-Pick-up to Other Store</option>
-                  <option value="Drop-Ship-Pick-up to DC">Drop-Ship-Pick-up to DC</option>
-                  <option value="Drop-Ship-Pick-up to Vendor">Drop-Ship-Pick-up to Vendor</option>
-                  <option value="Drop-Ship-Delivery from DC">Drop-Ship-Delivery from DC</option>
-                  <option value="Drop-Ship-Delivery from Vendor">Drop-Ship-Delivery from Vendor</option>
-                </select>
-              </div>
-            </div>
+            {
+              displayModeDrop && (
+                <div className="grid grid-cols-2">
+                  <label htmlFor="documentnumber">Mode of Releasing</label>
+                  <div>
+                    <select className="selections" onChange={(e)=>modeReleasing(e.target.value)} name="" id="">
+                      <option value="" disabled selected>Please Select</option>
+                      <option value="Standard-Pick-up">Standard-Pick-up</option>
+                      <option value="Standard-Delivery">Standard-Delivery</option>
+                      <option value="Standard-Pick-up to Other Store">Standard-Pick-up to Other Store</option>
+                      <option value="Back Order-Pick-up">Back Order-Pick-up</option>
+                      <option value="Back Order-Delivery">Back Order-Delivery</option>
+                      <option value="Back Order-Pick-up to Other Store">Back Order-Pick-up to Other Store</option>
+                      <option value="Drop-Ship-Pick-up to DC">Drop-Ship-Pick-up to DC</option>
+                      <option value="Drop-Ship-Pick-up to Vendor">Drop-Ship-Pick-up to Vendor</option>
+                      <option value="Drop-Ship-Delivery from DC">Drop-Ship-Delivery from DC</option>
+                      <option value="Drop-Ship-Delivery from Vendor">Drop-Ship-Delivery from Vendor</option>
+                    </select>
+                  </div>
+                </div>
+              )
+            }
             <div className="grid grid-cols-2">
               <label htmlFor="documentnumber">Sales Crew</label>
               <div>
@@ -2040,13 +2224,45 @@ export default function SalesOrder() {
         
           </div>
       </div>
-      <div className="p-2 flex justify-start">
-        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Save as draft</button> 
-        <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Commit</button>
+      <div className="grid grid-cols-2">
+        <div className="p-2 flex justify-start">
+          <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]" onClick={handleSaveDraft}>Save as draft</button> 
+          <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Commit</button>
+        </div>
+        <div className="p-2 flex justify-end">
+          { showMessage && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage
+                }
+              </div>
+            )
+          }
+          { showMessage2 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage2
+                }
+              </div>
+            )
+          }
+          { showMessage3 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage3
+                }
+              </div>
+            )
+          }
+          
+        </div>
       </div>
       {
         <div className="text-left">
           {/* <pre>{JSON.stringify(tableData, null, 2)}</pre> */}
+          {/* {
+            <pre>{JSON.stringify(finalTotalList, null, 2)}</pre>
+          } */}
         </div>
       }
     </>
