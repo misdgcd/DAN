@@ -60,6 +60,13 @@ export default function SalesOrder() {
   const arrayCustomer = [
     customerList
   ]
+
+  const [modeOfrelisingArr, setmodeOfrelisingArr] = useState([
+    {
+      itemCode: "",
+      modeReleasing: ""
+    }
+  ])
   
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -90,10 +97,15 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: 0,
       selected: false,
+      cash: "N",
       creditcard: "N",
       debit: "N",
       pdc: "N",
-      po: "N"
+      po: "N",
+      datedCheck: "N",
+      onlineTransfer: "N",
+      onAccount: "N",
+      cashOnDel: "N"
     }
   ]);
 
@@ -101,10 +113,22 @@ export default function SalesOrder() {
   const [finalTotalList, setfinalTotalList] = useState([
     {
       documentNum: "",
-      modeOfPayment: "",
+      modeOfPayment: [],
+      cash: "N",
+      creditcard: "N",
+      debit: "N",
+      pdc: "N",
+      po: "N",
+      datedCheck: "N",
+      onlineTransfer: "N",
+      onAccount: "N",
+      cashOnDel: "N",
       totalVal: 0,
       totalBeforeVat: 0,
-      totalAfterVat: 0
+      totalAfterVat: 0,
+      salescrew: "",
+      modeReleasingIndividual: [],
+      modeReleasingAll: "",
     }
   ]);
 
@@ -152,7 +176,6 @@ export default function SalesOrder() {
     setLowerBoundData(lowerBoundArr[indexNum]);
 
   }
-
   
   useEffect(()=>{
     onAddHeader();
@@ -164,9 +187,6 @@ export default function SalesOrder() {
     newData[rowIndex][fieldName] = value;
     console.log(value)
   };
-
- 
-  
 
   const handleAddRow = (rowIndex: any, fieldName: any) => {
 
@@ -198,13 +218,27 @@ export default function SalesOrder() {
         scPwdDiscount: '',
         grossTotal: 0,
         selected: false,
+        cash: "N",
         creditcard: "N",
         debit: "N",
         pdc: "N",
-        po: "N"
+        po: "N",
+        datedCheck: "N",
+        onlineTransfer: "N",
+        onAccount: "N",
+        cashOnDel: "N"
       },
     ]);
 
+    setmodeOfrelisingArr(prevData => [
+      ...prevData,
+      {
+        itemCode: "",
+        modeReleasing: ""
+      }
+    ]);
+
+    console.log("Add setmodeOfrelisingArr", modeOfrelisingArr)
 
     onAddHeader();
     onAddheaderItems();
@@ -283,7 +317,9 @@ export default function SalesOrder() {
     setShowWindow(!showWindow);
   }
 
-  const handleRemoveRow = (rowIndex: any) => {
+
+
+  const handleRemoveRow = (rowIndex: any, Itemcodex: any) => {
 
     countAllItem = countAllItem - 1;
     
@@ -314,13 +350,17 @@ export default function SalesOrder() {
       scPwdDiscount: '',
       grossTotal: '',
       selected: false,
+      cash: "N",
       creditcard: "N",
       debit: "N",
       pdc: "N",
-      po: "N"
+      po: "N",
+      datedCheck: "N",
+      onlineTransfer: "N",
+      onAccount: "N",
+      cashOnDel: "N"
     }
 
-    
     const newData: any = [...tableData];
     const newData2: any = newData[rowIndex]
     const newData3: any = newData[rowIndex] = emptyData;
@@ -328,6 +368,9 @@ export default function SalesOrder() {
     const latestTableDataArr = tableData;
 
     setTableData((prevData) => prevData.filter((_, index) => index !== rowIndex));
+    setmodeOfrelisingArr((prevData) => prevData.filter((_, index) => index !== rowIndex));
+
+    console.log("new mode afterdelete", modeOfrelisingArr)
 
   };
 
@@ -361,39 +404,36 @@ export default function SalesOrder() {
     console.log('open sample');
   }
 
+
+
   useEffect(()=>{
 
     let tempSum = 0;
     let tempSum2 = 0;
     let taxAmountSum = 0;
+    let salescrewfinal = "";
 
     const updatedTableData = [...tableData];
 
     let arrayLen = updatedTableData.length;
+
+    const setmodeOfrelisingArrx = [...modeOfrelisingArr];
     
     for(let i=0; i<arrayLen; i++){
       tempSum = tempSum + (updatedTableData[i]['sellingPriceBeforeDiscount'] * parseInt(updatedTableData[i]['quantity']));
       tempSum2 = tempSum2 + updatedTableData[i]['grossTotal'];
       taxAmountSum = taxAmountSum + updatedTableData[i]['taxAmount'];
+      setmodeOfrelisingArrx[i] = {
+        ...setmodeOfrelisingArrx[i],
+        itemCode: updatedTableData[i]['itemCode'],
+        modeReleasing: updatedTableData[i]['modeOfReleasing']
+      }
+      setmodeOfrelisingArr(setmodeOfrelisingArrx);
     }
     
-    setTotalBeforeVat(localCurrency.format(tempSum - taxAmountSum))
-    settotalAfterVat(localCurrency.format(tempSum2))
+    setTotalBeforeVat(localCurrency.format(tempSum2))
+    settotalAfterVat(localCurrency.format(tempSum2 - taxAmountSum))
     setTotalVat(localCurrency.format(taxAmountSum));
-
-    const updatefinalTotalList = [...finalTotalList];
-
-    updatefinalTotalList[0] = {
-      ...updatefinalTotalList[0],
-      documentNum: "",
-      modeOfPayment: "",
-      totalVal: taxAmountSum,
-      totalBeforeVat: tempSum - taxAmountSum,
-      totalAfterVat: tempSum2
-    }
-
-    setfinalTotalList(updatefinalTotalList);
-
 
   });
 
@@ -450,15 +490,15 @@ export default function SalesOrder() {
     onAddHeaderUOM(itemCode, rowIndex);
   }
 
-    const openLocationTable = (rowIndex: any, itemcode: any, name: any, uom: any, itemname: any) => {
-      setOpenLocationPanel(!openLocationPanel);
-      setSelectedRowIndex(rowIndex);
-      onAddHeaderWareHouse(itemcode, name, uom);
-      
-      setitemcodewh(itemcode);
-      setitemnamews(itemname);
-      setitemuomws(name);
-    }
+  const openLocationTable = (rowIndex: any, itemcode: any, name: any, uom: any, itemname: any) => {
+    setOpenLocationPanel(!openLocationPanel);
+    setSelectedRowIndex(rowIndex);
+    onAddHeaderWareHouse(itemcode, name, uom);
+    
+    setitemcodewh(itemcode);
+    setitemnamews(itemname);
+    setitemuomws(name);
+  }
 
   const openModRelTable = (rowIndex: any) =>{
     setOpenModRelTablePanel(!openModRelTablePanel);
@@ -662,6 +702,9 @@ export default function SalesOrder() {
 
       console.log("stocks", quantityXuomConversion)
 
+      let unitprice = item.sellingPriceAfterDiscountTemp / (1 + 0.12);
+      let taxAmountx = (item.sellingPriceAfterDiscountTemp - unitprice) * quantity;
+
       updatedTableData[rowIndex] = {
         ...item,
         quantity: quantity,
@@ -670,7 +713,7 @@ export default function SalesOrder() {
         sellingPriceAfterDiscount: disPriceArr[0]['DiscPrice'],
         sellingPriceAfterDiscountTemp: disPriceArr[0]['DiscPrice'],
         grossTotal: quantity * item.sellingPriceAfterDiscount,
-        taxAmount: (quantity * item.sellingPriceAfterDiscount) * 0.12,
+        taxAmount: taxAmountx,
         inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
       };
       setTableData(updatedTableData);
@@ -717,7 +760,10 @@ export default function SalesOrder() {
     setTableData(updatedTableData);
   };
 
-  let localCurrency = new Intl.NumberFormat('en-IN', { maximumSignificantDigits: 7 })
+  let localCurrency = new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP' // Philippines currency code for Philippine Peso
+  });
 
   
   const handleSearchItem = (event:any) => {
@@ -849,10 +895,15 @@ export default function SalesOrder() {
 
   }
 
+  const [isCheckedCash, setIsCheckedCash] = useState(false);
   const [isCheckedCreditCard, setIsCheckedCreditCard] = useState(false);
   const [isCheckedDebit, setIsCheckedDebit] = useState(false);
   const [isCheckedPDC, setIsCheckedPDC] = useState(false);
   const [isCheckedPO, setIsCheckedPO] = useState(false);
+  const [isCheckedDatedCheck, setIsCheckedDatedCheck] = useState(false);
+  const [isCheckedOnlineTransfer, setIsCheckedOnlineTransfer] = useState(false);
+  const [isCheckedOnAccount, setIsCheckedOnAccount] = useState(false);
+  const [isCheckedCashOnDel, setIsCheckedCashOnDel] = useState(false);
 
   const [creditcardstatus, setcreditcardstatus] = useState("N");
   const [debitstatus, setdebitstatus] = useState("N");
@@ -860,6 +911,60 @@ export default function SalesOrder() {
   const [postatus, setpostatus] = useState("N");
 
   const [ccstatus, setccstatus] = useState(false);
+
+  const handCash = async (event: any) => {
+    setIsCheckedCash(event.target.checked);
+
+    console.log(event.target.checked)
+
+    if(isCheckedCash != true){
+
+      setccstatus(true);
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          cash: "Y"
+        };
+
+        setTableData(updatedTableData);
+
+
+
+      }
+
+      setccstatus(false);
+
+    }else{
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        setccstatus(true);
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          cash: "N"
+        };
+
+        setTableData(updatedTableData);
+
+        setccstatus(false);
+
+      }
+    }
+
+  };
 
   const handleCreditCard = async (event: any) => {
     setIsCheckedCreditCard(event.target.checked);
@@ -908,7 +1013,16 @@ export default function SalesOrder() {
           
         }).catch(e => {
           console.error('Error credit card', e);
-        })
+        }) 
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          creditcard: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
     
         
         // console.log(disPriceArr, "disarr")
@@ -961,7 +1075,15 @@ export default function SalesOrder() {
         }).catch(e => {
           console.error('Error credit card', e);
         })
-    
+        
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          creditcard: "N"
+        }
+  
+        setfinalTotalList(finalArr);
         
         // console.log(disPriceArr, "disarr")
 
@@ -1019,6 +1141,15 @@ export default function SalesOrder() {
         }).catch(e => {
           console.error('Error credit card', e);
         })
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          debit: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
     
         
         // console.log(disPriceArr, "disarr")
@@ -1071,6 +1202,15 @@ export default function SalesOrder() {
         }).catch(e => {
           console.error('Error credit card', e);
         })
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          debit: "N"
+        }
+  
+        setfinalTotalList(finalArr);
     
         
         // console.log(disPriceArr, "disarr")
@@ -1102,34 +1242,16 @@ export default function SalesOrder() {
 
         setTableData(updatedTableData);
 
-        const item2 = updatedTableData[i];
+        const finalArr = [...finalTotalList];
 
-        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
-          
-          const disPriceArr = response.data;
-          const disAfterPrice = disPriceArr[0]['DiscPrice'];
-          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
-
-          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
-
-          const newupdatedTableData = [...tableData];
-          const itemnew = newupdatedTableData[i];
-        
-          updatedTableData[i] = {
-            ...itemnew,
-            pdc: "Y",
-            discountRate: disRateFor,
-            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
-            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
-          };
-          setTableData(updatedTableData);
+        finalArr[0] = {
+          ...finalArr[0],
+          pdc: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
 
           setccstatus(false);
-          
-        }).catch(e => {
-          console.error('Error credit card', e);
-        })
-    
         
         // console.log(disPriceArr, "disarr")
 
@@ -1154,34 +1276,16 @@ export default function SalesOrder() {
 
         setTableData(updatedTableData);
 
-        const item2 = updatedTableData[i];
+        const finalArr = [...finalTotalList];
 
-        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
-          
-          const disPriceArr = response.data;
-          const disAfterPrice = disPriceArr[0]['DiscPrice'];
-          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
-
-          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
-
-          const newupdatedTableData = [...tableData];
-          const itemnew = newupdatedTableData[i];
-        
-          updatedTableData[i] = {
-            ...itemnew,
-            pdc: "N",
-            discountRate: disRateFor,
-            sellingPriceAfterDiscount: disAfterPrice,
-            sellingPriceAfterDiscountTemp: disAfterPrice,
-          };
-          setTableData(updatedTableData);
+        finalArr[0] = {
+          ...finalArr[0],
+          pdc: "N"
+        }
+  
+        setfinalTotalList(finalArr);
 
           setccstatus(false);
-          
-        }).catch(e => {
-          console.error('Error credit card', e);
-        })
-    
         
         // console.log(disPriceArr, "disarr")
 
@@ -1193,6 +1297,8 @@ export default function SalesOrder() {
 
   const handlePO = async (event: any) => {
     setIsCheckedPO(event.target.checked);
+
+    const finalArr = [...finalTotalList];
 
     if(isCheckedPO != true){
 
@@ -1214,32 +1320,7 @@ export default function SalesOrder() {
 
         const item2 = updatedTableData[i];
 
-        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
-          
-          const disPriceArr = response.data;
-          const disAfterPrice = disPriceArr[0]['DiscPrice'];
-          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
-
-          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
-
-          const newupdatedTableData = [...tableData];
-          const itemnew = newupdatedTableData[i];
-        
-          updatedTableData[i] = {
-            ...itemnew,
-            po: "Y",
-            discountRate: disRateFor,
-            sellingPriceAfterDiscount: itemnew.sellingPriceBeforeDiscount,
-            sellingPriceAfterDiscountTemp: itemnew.sellingPriceBeforeDiscount,
-          };
-          setTableData(updatedTableData);
-
           setccstatus(false);
-          
-        }).catch(e => {
-          console.error('Error credit card', e);
-        })
-    
         
         // console.log(disPriceArr, "disarr")
 
@@ -1266,32 +1347,8 @@ export default function SalesOrder() {
 
         const item2 = updatedTableData[i];
 
-        axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${item.sellingPriceBeforeDiscount}/${cardCodedata}/${item.itemCode}/${item.quantity}/${item.uom}/${item.lowerBound}/${item2.creditcard}/${item2.debit}/${item2.pdc}/${item2.po}/${item2.taxCode}`).then(response => {
-          
-          const disPriceArr = response.data;
-          const disAfterPrice = disPriceArr[0]['DiscPrice'];
-          const disRateFor = ((item.sellingPriceBeforeDiscount - disAfterPrice)/item.sellingPriceBeforeDiscount)*100;
-
-          console.log(i, disRateFor, item2.creditcard, item2.debit, item2.pdc, item2.po, "- Done PDC");
-
-          const newupdatedTableData = [...tableData];
-          const itemnew = newupdatedTableData[i];
-        
-          updatedTableData[i] = {
-            ...itemnew,
-            po: "N",
-            discountRate: disRateFor,
-            sellingPriceAfterDiscount: disAfterPrice,
-            sellingPriceAfterDiscountTemp: disAfterPrice,
-          };
-          setTableData(updatedTableData);
-
           setccstatus(false);
           
-        }).catch(e => {
-          console.error('Error credit card', e);
-        })
-    
         
         // console.log(disPriceArr, "disarr")
 
@@ -1300,13 +1357,291 @@ export default function SalesOrder() {
     }
   };
 
+  const handleDatedCheck = (event: any) => {
+    setIsCheckedDatedCheck(event.target.checked);
+
+    console.log(event.target.checked)
+
+    const finalArr = [...finalTotalList];
+
+    if(isCheckedDatedCheck != true){
+
+      setccstatus(true);
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          datedCheck: "Y"
+        };
+
+        setTableData(updatedTableData);
+
+        
+        finalArr[0] = {
+          ...finalArr[0],
+          datedCheck: "Y"
+        }
+
+        setfinalTotalList(finalArr);
+
+      }
+
+      setccstatus(false);
+
+    }else{
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        setccstatus(true);
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          datedCheck: "N"
+        };
+
+        setTableData(updatedTableData);
+
+                
+        finalArr[0] = {
+          ...finalArr[0],
+          datedCheck: "N"
+        }
+
+        setfinalTotalList(finalArr);
+        
+        setccstatus(false);
+
+      }
+    }
+  }
+
+  const handlOnlineTransfer = (event: any) => {
+    setIsCheckedOnlineTransfer(event.target.checked);
+
+    console.log(event.target.checked)
+
+    const finalArr = [...finalTotalList];
+
+    if(isCheckedOnlineTransfer != true){
+
+      setccstatus(true);
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          onlineTransfer: "Y"
+        };
+
+        setTableData(updatedTableData);
+  
+        finalArr[0] = {
+          ...finalArr[0],
+          onlineTransfer: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
+
+      }
+
+      setccstatus(false);
+
+    }else{
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        setccstatus(true);
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          onlineTransfer: "N"
+        };
+
+        setTableData(updatedTableData);
+
+        finalArr[0] = {
+          ...finalArr[0],
+          onlineTransfer: "N"
+        }
+  
+        setfinalTotalList(finalArr);
+        
+        setccstatus(false);
+
+      }
+    }
+  }
+
+  const handleOnAccount = (event: any) => {
+    setIsCheckedOnAccount(event.target.checked);
+
+    console.log(event.target.checked)
+
+    if(isCheckedOnAccount != true){
+
+      setccstatus(true);
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          onAccount: "Y"
+        };
+
+        setTableData(updatedTableData);
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          onAccount: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
+
+      }
+
+      setccstatus(false);
+
+    }else{
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        setccstatus(true);
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          onAccount: "N"
+        };
+
+        setTableData(updatedTableData);
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          onAccount: "N"
+        }
+  
+        setfinalTotalList(finalArr);
+        
+        setccstatus(false);
+
+      }
+    }
+  }
+
+  const handleCashOnDel = (event: any) => {
+    setIsCheckedCashOnDel(event.target.checked);
+
+    console.log(event.target.checked)
+
+    if(isCheckedCashOnDel != true){
+
+      setccstatus(true);
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          cashOnDel: "Y"
+        };
+        
+        setTableData(updatedTableData);
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          cashOnDel: "Y"
+        }
+  
+        setfinalTotalList(finalArr);
+
+      }
+
+      setccstatus(false);
+
+    }else{
+
+      const updatedTableData = [...tableData];
+      const tableDatalen = tableData.length;
+
+      for(let i=0; i<tableDatalen; i++){
+
+        setccstatus(true);
+
+        const item = updatedTableData[i];
+        
+        updatedTableData[i] = {
+          ...item,
+          cashOnDel: "N"
+        };
+
+        setTableData(updatedTableData);
+
+        const finalArr = [...finalTotalList];
+
+        finalArr[0] = {
+          ...finalArr[0],
+          cashOnDel: "N"
+        }
+  
+        setfinalTotalList(finalArr);
+        
+        setccstatus(false);
+
+      }
+    }
+  }
+
   const [showMessage, setshowMessage] = useState(false);
   const [showMessage2, setshowMessage2] = useState(false);
   const [showMessage3, setshowMessage3] = useState(false);
+  const [showMessage4, setshowMessage4] = useState(false);
+  const [showMessage5, setshowMessage5] = useState(false);
 
   const [errMessage, seterrMessage] = useState("");
   const [errMessage2, seterrMessage2] = useState("");
   const [errMessage3, seterrMessage3] = useState("");
+  const [errMessage4, seterrMessage4] = useState("");
+  const [errMessage5, seterrMessage5] = useState("");
 
   const [displayModeDrop, setDisplayModeDrop] = useState(false)
 
@@ -1333,7 +1668,7 @@ export default function SalesOrder() {
 
   })
 
-  const handleSaveDraft = () => {
+  const handleSaveDraft = () => { 
 
     const finalTotalListArr = [...finalTotalList];
     const arrList = finalTotalListArr[0];
@@ -1342,6 +1677,8 @@ export default function SalesOrder() {
     const allItemsArrLen = allItemsArr.length;
 
     let countAllreleasing = 0;
+
+    console.log("mode of rel", finalTotalList);
 
     for(let i=0; i<allItemsArrLen; i++){
       console.log(allItemsArr[i]['modeOfReleasing'])
@@ -1361,6 +1698,9 @@ export default function SalesOrder() {
         setshowMessage2(false)
       }, 10000);
     }
+
+
+
 
     if(arrList.totalVal == 0){
       setshowMessage(true)
@@ -1388,7 +1728,116 @@ export default function SalesOrder() {
       }, 10000);
     }
 
+    handleModeOfPayment();
+    handleTotal();
+    handleSalesCrew();
+
   }
+
+  const addSalesCrew = (salescrewx: any) => {
+
+    const arrForsales = [...finalTotalList];
+
+    arrForsales[0] = {
+      ...arrForsales[0],
+      salescrew: salescrewx
+    }
+
+    setfinalTotalList(arrForsales);
+
+  }
+
+  const handleSalesCrew = () => {
+
+    const arrForsales = [...finalTotalList];
+
+    if(arrForsales[0]['salescrew'] == ""){
+      
+      setshowMessage5(true)
+      seterrMessage5("Please select salescrew");
+        setTimeout(()=>{
+          setshowMessage5(false)
+        }, 10000);
+    }else{
+      setshowMessage5(false)
+    }
+
+    console.log(arrForsales[0]['salescrew'], "sales")
+
+  }
+
+  const handleTotal = () => {
+
+    let tempSum = 0;
+    let tempSum2 = 0;
+    let taxAmountSum = 0;
+    let salescrewfinal = "";
+
+    const updatedTableData = [...tableData];
+
+    let arrayLen = updatedTableData.length;
+
+    const setmodeOfrelisingArrx = [...modeOfrelisingArr];
+    
+    for(let i=0; i<arrayLen; i++){
+      tempSum = tempSum + (updatedTableData[i]['sellingPriceBeforeDiscount'] * parseInt(updatedTableData[i]['quantity']));
+      tempSum2 = tempSum2 + updatedTableData[i]['grossTotal'];
+      taxAmountSum = taxAmountSum + updatedTableData[i]['taxAmount'];
+    }
+
+    const updatefinalTotalList = [...finalTotalList];
+
+    updatefinalTotalList[0] = {
+      ...updatefinalTotalList[0],
+      totalVal: taxAmountSum,
+      totalBeforeVat: tempSum - taxAmountSum,
+      totalAfterVat: tempSum2,
+      modeReleasingIndividual: modeOfrelisingArr
+
+    }
+
+    setfinalTotalList(updatefinalTotalList);
+
+  }
+
+ 
+
+  const handleModeOfPayment = () => {
+
+     const tabledataformodeofpayment = [...tableData];
+     const finalArr = [...finalTotalList];
+
+     console.log("tabledataformode", tabledataformodeofpayment[0]['cash']);
+
+     if(tabledataformodeofpayment[0]['cash'] == "N" && 
+        tabledataformodeofpayment[0]['creditcard'] == "N" && 
+        tabledataformodeofpayment[0]['debit'] == "N" &&
+        tabledataformodeofpayment[0]['pdc'] == "N" &&
+        tabledataformodeofpayment[0]['po'] == "N" &&
+        tabledataformodeofpayment[0]['datedCheck'] == "N" &&
+        tabledataformodeofpayment[0]['onlineTransfer'] == "N" &&
+        tabledataformodeofpayment[0]['onAccount'] == "N" &&
+        tabledataformodeofpayment[0]['cashOnDel'] == "N"
+      ){
+        setshowMessage4(true)
+        seterrMessage4("Please select atleast 1 mode of payment");
+        setTimeout(()=>{
+          setshowMessage4(false)
+        }, 10000);
+     }else{
+      setshowMessage3(false)
+     }
+
+  }
+
+
+  const commit = () => {
+
+    const finalArr = [...finalTotalList];
+
+    console.log("xxx", finalArr)
+  }
+
 
   return (
     <>
@@ -1622,7 +2071,7 @@ export default function SalesOrder() {
             {tableData.map((rowData: any, rowIndex) => (
               <tr className="trcus" key={rowIndex}>
                 <td>
-                    <button onClick={() => handleRemoveRow(rowIndex)}>
+                    <button onClick={() => handleRemoveRow(rowIndex, rowData.itemCode)}>
                     <span className="text-md text-red-600">❌</span>
                     </button>
                 </td>
@@ -1705,7 +2154,7 @@ export default function SalesOrder() {
                   rowData.quantity == 0 ? 'bg-white' : rowData.inventoryStatus === "Available" ? "bg-green-200" : rowData.inventoryStatus === "Out of Stocks" ? "bg-red-200" : ""
                 }>
                   {
-                    rowData.quantity == 0 ? '' : rowData.inventoryStatus 
+                    rowData.quantity == 0 ? '' : rowData.inventoryStatus + " "+ rowData.cash + " " + rowData.creditcard + " " + rowData.debit + " " + rowData.pdc + " " + rowData.po + " " + rowData.datedCheck + " " + rowData.onlineTransfer + " " + rowData.onAccount + " " + rowData.cashOnDel
                   }
                 </td>
                 {/* + " " + rowData.creditcard + " " + rowData.debit + " " + rowData.pdc + " " + rowData.po */}
@@ -2104,7 +2553,11 @@ export default function SalesOrder() {
               <label htmlFor="documentnumber">Mode of Payment:</label>
               <div className="">
                 <div className="flex justify-start gap-2 w-[100px]">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedCash}
+                    onChange={handCash}
+                    disabled={ccstatus}
+                  />
                   Cash
                 </div>
                 <div className="flex justify-start gap-2">
@@ -2140,51 +2593,66 @@ export default function SalesOrder() {
                   PO
                 </div>
                 <div className="flex justify-start gap-2 w-[200px]">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedDatedCheck}
+                    onChange={handleDatedCheck}
+                    disabled={ccstatus}
+                  />
                   Dated Check
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedOnlineTransfer}
+                    onChange={handlOnlineTransfer}
+                    disabled={ccstatus}
+                  />
                   Online Transfer
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedOnAccount}
+                    onChange={handleOnAccount}
+                    disabled={ccstatus}
+                  />
                   On Account
                 </div>
                 <div className="flex justify-start gap-2">
-                  <input className="w-[20px]" type="checkbox" />
+                  <input className="w-[20px]" type="checkbox" 
+                    checked={isCheckedCashOnDel}
+                    onChange={handleCashOnDel}
+                    disabled={ccstatus}
+                  />
                   Cash on Delivery
                 </div>
 
               </div>
             </div>
-
-            {
-              displayModeDrop && (
-                <div className="grid grid-cols-2">
-                  <label htmlFor="documentnumber">Mode of Releasing</label>
-                  <div>
-                    <select className="selections" onChange={(e)=>modeReleasing(e.target.value)} name="" id="">
-                      <option value="" disabled selected>Please Select</option>
-                      <option value="Standard-Pick-up">Standard-Pick-up</option>
-                      <option value="Standard-Delivery">Standard-Delivery</option>
-                      <option value="Standard-Pick-up to Other Store">Standard-Pick-up to Other Store</option>
-                      <option value="Back Order-Pick-up">Back Order-Pick-up</option>
-                      <option value="Back Order-Delivery">Back Order-Delivery</option>
-                      <option value="Back Order-Pick-up to Other Store">Back Order-Pick-up to Other Store</option>
-                      <option value="Drop-Ship-Pick-up to DC">Drop-Ship-Pick-up to DC</option>
-                      <option value="Drop-Ship-Pick-up to Vendor">Drop-Ship-Pick-up to Vendor</option>
-                      <option value="Drop-Ship-Delivery from DC">Drop-Ship-Delivery from DC</option>
-                      <option value="Drop-Ship-Delivery from Vendor">Drop-Ship-Delivery from Vendor</option>
-                    </select>
-                  </div>
+              <div className="grid grid-cols-2">
+                <label htmlFor="documentnumber">Mode of Releasing</label>
+                <div>
+                  <select className="selections" onChange={(e)=>modeReleasing(e.target.value)} name="" id="">
+                    <option value="" disabled selected>Please Select</option>
+                    <option value="Standard-Pick-up">Standard-Pick-up</option>
+                    <option value="Standard-Delivery">Standard-Delivery</option>
+                    <option value="Standard-Pick-up to Other Store">Standard-Pick-up to Other Store</option>
+                    <option value="Back Order-Pick-up">Back Order-Pick-up</option>
+                    <option value="Back Order-Delivery">Back Order-Delivery</option>
+                    <option value="Back Order-Pick-up to Other Store">Back Order-Pick-up to Other Store</option>
+                    <option value="Drop-Ship-Pick-up to DC">Drop-Ship-Pick-up to DC</option>
+                    <option value="Drop-Ship-Pick-up to Vendor">Drop-Ship-Pick-up to Vendor</option>
+                    <option value="Drop-Ship-Delivery from DC">Drop-Ship-Delivery from DC</option>
+                    <option value="Drop-Ship-Delivery from Vendor">Drop-Ship-Delivery from Vendor</option>
+                  </select>
                 </div>
-              )
-            }
+              </div>
             <div className="grid grid-cols-2">
               <label htmlFor="documentnumber">Sales Crew</label>
               <div>
-                <input type="text" />
+                <select className="selections" onChange={(e)=>addSalesCrew(e.target.value)} name="" id="salescrew">
+                  <option value=""></option>
+                  <option value="Boss Mark">Boss Mark</option>
+                  <option value="Dan">Dan</option>
+                </select>
               </div>
             </div>
             <div className="grid grid-cols-2">
@@ -2193,31 +2661,25 @@ export default function SalesOrder() {
                 <textarea name="" id=""></textarea>
               </div>
             </div>
-            <div className="grid grid-cols-2">
-              <label htmlFor="documentnumber">Sales Crew</label>
-              <div>
-                <input type="text" />
-              </div>
-            </div>
           </div>
           <div className="text-right w-full grid justify-end">  
             <div className="w-[440px] ">
               <div className="grid grid-cols-2 text-right">
                 <label htmlFor="documentnumber" className="text-right">Total Amount Before VAT</label>
                 <div>
-                  <input value={totalAfterVat} type="text" />
+                  <input value={totalAfterVat} type="text" readOnly/>
                 </div>
               </div>
               <div className="grid grid-cols-2">
                 <label htmlFor="documentnumber">Total VAT</label>
                 <div>
-                  <input value={totalVat} type="text" />
+                  <input value={totalVat} type="text" readOnly/>
                 </div>
               </div>
               <div className="grid grid-cols-2">
                 <label htmlFor="documentnumber">Total After VAT</label>
                 <div>
-                  <input value={totalBeforeVat} type="text" />
+                  <input value={totalBeforeVat} type="text" readOnly/>
                 </div>
               </div>
             </div>
@@ -2227,7 +2689,7 @@ export default function SalesOrder() {
       <div className="grid grid-cols-2">
         <div className="p-2 flex justify-start">
           <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]" onClick={handleSaveDraft}>Save as draft</button> 
-          <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]">Commit</button>
+          <button className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-[#F4D674]" onClick={commit}>Commit</button>
         </div>
         <div className="p-2 flex justify-end">
           { showMessage && (
@@ -2250,6 +2712,22 @@ export default function SalesOrder() {
               <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
                 {
                   errMessage3
+                }
+              </div>
+            )
+          }
+          { showMessage4 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage4
+                }
+              </div>
+            )
+          }
+          { showMessage5 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage5
                 }
               </div>
             )
