@@ -703,7 +703,9 @@ export default function SalesOrder() {
       console.log("stocks", quantityXuomConversion)
 
       let unitprice = item.sellingPriceAfterDiscountTemp / (1 + 0.12);
-      let taxAmountx = (item.sellingPriceAfterDiscountTemp - unitprice) * quantity;
+      let taxAmountx = (item.sellingPriceAfterDiscountTemp - unitprice) ;
+
+      console.log("selPrice:",item.sellingPriceAfterDiscountTemp, "selprice/1.12:",unitprice, "taxamount:", taxAmountx)
 
       updatedTableData[rowIndex] = {
         ...item,
@@ -713,7 +715,7 @@ export default function SalesOrder() {
         sellingPriceAfterDiscount: disPriceArr[0]['DiscPrice'],
         sellingPriceAfterDiscountTemp: disPriceArr[0]['DiscPrice'],
         grossTotal: quantity * item.sellingPriceAfterDiscount,
-        taxAmount: taxAmountx,
+        taxAmount: taxAmountx * quantity,
         inventoryStatus: stocksAvailabilityArr[0]['StockAvailable']
       };
       setTableData(updatedTableData);
