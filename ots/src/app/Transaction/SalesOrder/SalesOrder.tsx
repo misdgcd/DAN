@@ -55,6 +55,13 @@ export default function SalesOrder() {
   const [totalVat, setTotalVat] = useState("");
   const [sellingPriceAfterDiscountData, setSellingPriceAfterDis] = useState(0)
 
+  const [showSCPDW, setShowSCPWD] = useState(false);
+  const [varSCPWDdisc, setVarSCPWDdisc] = useState(0);
+  const [SCPWDdata, setSCPWDdata] = useState(0)
+  const [totalAmoutDueData, settotalAmoutDueData] = useState(0)
+
+  const [scpdwdID, setscpdwdID] = useState("");
+
   let customerData2 = [{}];
   let currentCustomerData = customerList;
   const arrayCustomer = [
@@ -94,7 +101,7 @@ export default function SalesOrder() {
       cost: 0,
       belCost: '', 
       modeOfReleasing: '',
-      scPwdDiscount: '',
+      scPwdDiscount: 'N',
       grossTotal: 0,
       selected: false,
       cash: "N",
@@ -109,6 +116,15 @@ export default function SalesOrder() {
     }
   ]);
 
+  useEffect(()=>{
+    if(cardCodedata == "C000112"){
+      setShowSCPWD(true);
+      setVarSCPWDdisc(0.05);
+    }else{
+      setShowSCPWD(false);
+      setVarSCPWDdisc(0);
+    }
+  })
 
   const [finalTotalList, setfinalTotalList] = useState([
     {
@@ -129,6 +145,8 @@ export default function SalesOrder() {
       salescrew: "",
       modeReleasingIndividual: [],
       modeReleasingAll: "",
+      scpwddisctotal: 0,
+      totalamoutdue: 0
     }
   ]);
 
@@ -215,7 +233,7 @@ export default function SalesOrder() {
         cost: 0,
         belCost: '',
         modeOfReleasing: '',
-        scPwdDiscount: '',
+        scPwdDiscount: 'N',
         grossTotal: 0,
         selected: false,
         cash: "N",
@@ -247,13 +265,16 @@ export default function SalesOrder() {
   };
 
 
+
+
   const [customerData, setCustomerData] = useState([
     {
       customerCode: '00000',
       customerName: 'N/A',
       customerCardFName: '',
       cusShipAddress: 'N/A',
-      cusLicTradNum: 'N/A'
+      cusLicTradNum: 'N/A',
+
     }
   ]);
 
@@ -280,7 +301,6 @@ export default function SalesOrder() {
     const updatedTableData = [...tableData];
 
     const listArryLen = updatedTableData.length;
-    
 
     taxRateData.map((e)=>{
       for(let i=0; i<listArryLen; i++){
@@ -293,7 +313,6 @@ export default function SalesOrder() {
       }
     })
   
-    
     let newArray  = {
       customerCode: id,
       customerName: name,
@@ -347,7 +366,7 @@ export default function SalesOrder() {
       cost: 0,
       belCost: 0,
       modeOfReleasing: '',
-      scPwdDiscount: '',
+      scPwdDiscount: 'N',
       grossTotal: '',
       selected: false,
       cash: "N",
@@ -411,7 +430,7 @@ export default function SalesOrder() {
     let tempSum = 0;
     let tempSum2 = 0;
     let taxAmountSum = 0;
-    let salescrewfinal = "";
+    let salescrewfinal = varSCPWDdisc;
 
     const updatedTableData = [...tableData];
 
@@ -430,10 +449,14 @@ export default function SalesOrder() {
       }
       setmodeOfrelisingArr(setmodeOfrelisingArrx);
     }
+
+
     
-    setTotalBeforeVat(localCurrency.format(tempSum2))
-    settotalAfterVat(localCurrency.format(tempSum2 - taxAmountSum))
-    setTotalVat(localCurrency.format(taxAmountSum));
+    setTotalBeforeVat(localCurrency.format(tempSum2)) //total after vat
+    settotalAfterVat(localCurrency.format(tempSum2 - taxAmountSum)) //Total Amount Before VAT
+    setTotalVat(localCurrency.format(taxAmountSum)); //Total VAT
+    setSCPWDdata(localCurrency.format((tempSum2 - taxAmountSum) * varSCPWDdisc)) //SC/PWD Discount Total
+    settotalAmoutDueData(localCurrency.format(tempSum2 - ((tempSum2 - taxAmountSum) * varSCPWDdisc)))
 
   });
 
@@ -518,6 +541,8 @@ export default function SalesOrder() {
 
     countAllItem = countAllItem + 1;
 
+
+
     if (selectedRowIndex !== null) {
 
       const updateQuantityData = [...quantityData];
@@ -550,14 +575,21 @@ export default function SalesOrder() {
       const lowerbound = await axios.get(`${process.env.NEXT_PUBLIC_IP}/lowerbound/${priceListNum}/${taxCodeDataNow}/${item.ItemCode}/${warehouseCode}/1`);
       const lowerboundArr = lowerbound.data;
       const lowerBoundFinalItem = lowerboundArr[0]['LowerBound'];
-      const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];      
+      const disPriceBefDis = updatedTableData[selectedRowIndex]['sellingPriceBeforeDiscount'];    
+      
+      let SCDiscount = "";
 
+      const scdiscount = await axios.get(`${process.env.NEXT_PUBLIC_IP}/sc-discount/${cardCodedata}/${item.ItemCode}`);
+      SCDiscount = scdiscount.data[0]['SCDiscount'];
+      console.log("Damns", scdiscount.data[0]['SCDiscount'])
+      console.log(scdiscount.data, "hehe")
+      
         updatedTableData[selectedRowIndex] = {
 
           ...updatedTableData[selectedRowIndex],
           itemCode: item.ItemCode,
           itemName: item.ItemName,
-          quantity: 0,
+          quantity: 1,
           discountRate: 0,
           uom: item.UomCode,
           location: 'GSCNAPGS',
@@ -569,8 +601,10 @@ export default function SalesOrder() {
           belCost: 'N',
           sellingPriceBeforeDiscount: item.SRP,
           sellingPriceAfterDiscount: item.SRP,
+          sellingPriceAfterDiscountTemp: item.SRP,
           taxAmount: item.SRP * 0.12,
-          grossTotal: item.SRP
+          grossTotal: item.SRP,
+          scPwdDiscount: SCDiscount
         };
         setTableData(updatedTableData);
         setShowItems(false);
@@ -578,7 +612,7 @@ export default function SalesOrder() {
         setOpenItemTablePanel(!openItemTablePanel);
         setSellingPriceAfterDis(item.Price);
 
-        console.log("New Data", updatedTableData);
+        // const disPrice = await axios.get(`${process.env.NEXT_PUBLIC_IP}/discount-price/${brandID}/${disPriceBefDis}/${disCardCode}/${disItemCode}/${quantity}/${disUOM}/${disLowerBound}/N/N/N/N/${disTaxCode}`);
 
         const disCardCode = cardCodedata;
         const disItemCode = item.ItemCode;
@@ -660,6 +694,8 @@ export default function SalesOrder() {
     }
   };
 
+  
+
   const handleQuantityChange =  async (rowIndex: any, quantity: any) => {
     
     const updatedTableData = [...tableData];
@@ -673,6 +709,8 @@ export default function SalesOrder() {
     const disUOM = item.uom;
     const disLowerBound = item.lowerBound;
     const disTaxCode = item.taxCode;
+
+    console.log("QuantityNow: ", item)
 
     try{
 
@@ -705,6 +743,10 @@ export default function SalesOrder() {
       let unitprice = item.sellingPriceAfterDiscountTemp / (1 + 0.12);
       let taxAmountx = (item.sellingPriceAfterDiscountTemp - unitprice) ;
 
+      setTotalVat(taxAmountx)
+
+      console.log(taxAmountx, "hehe");
+
       console.log("selPrice:",item.sellingPriceAfterDiscountTemp, "selprice/1.12:",unitprice, "taxamount:", taxAmountx)
 
       updatedTableData[rowIndex] = {
@@ -720,6 +762,7 @@ export default function SalesOrder() {
       };
       setTableData(updatedTableData);
       setSellingPriceAfterDis(item.sellingPriceAfterDiscount);
+      
       
     }catch(e){
       
@@ -1638,12 +1681,16 @@ export default function SalesOrder() {
   const [showMessage3, setshowMessage3] = useState(false);
   const [showMessage4, setshowMessage4] = useState(false);
   const [showMessage5, setshowMessage5] = useState(false);
+  const [showMessage6, setshowMessage6] = useState(false);
+  const [showMessage7, setshowMessage7] = useState(false);
 
   const [errMessage, seterrMessage] = useState("");
   const [errMessage2, seterrMessage2] = useState("");
   const [errMessage3, seterrMessage3] = useState("");
   const [errMessage4, seterrMessage4] = useState("");
   const [errMessage5, seterrMessage5] = useState("");
+  const [errMessage6, seterrMessage6] = useState("");
+  const [errMessage7, seterrMessage7] = useState("");
 
   const [displayModeDrop, setDisplayModeDrop] = useState(false)
 
@@ -1733,7 +1780,51 @@ export default function SalesOrder() {
     handleModeOfPayment();
     handleTotal();
     handleSalesCrew();
+    handleSCPWD();
+    handleSCPWDStatus();
 
+  }
+
+  const handleSCPWDStatus = () => {
+
+    const allItemsArr = [...tableData];
+    const allItemsArrLen = allItemsArr.length;
+
+    let statuscount = 0;
+
+    for(let i=0; i<allItemsArrLen; i++){
+      if(allItemsArr[i]['scPwdDiscount'] == "N"){
+        statuscount = statuscount + 1;
+      }
+    }
+
+    if(cardCodedata == "C000112"){
+      if(statuscount > 0){
+        setshowMessage7(true)
+          seterrMessage7("Some items are not applicable for discounting.");
+          setTimeout(()=>{
+            setshowMessage7(false)
+          }, 10000);
+      }else{
+        setshowMessage7(false)
+      }
+    }
+
+  }
+
+  const handleSCPWD = () => {
+    if(cardCodedata == "C000112"){
+      if(scpdwdID == ""){
+        setshowMessage6(true)
+        seterrMessage6("SC/PWD ID is empty");
+        setTimeout(()=>{
+          setshowMessage6(false)
+        }, 10000);
+      }else{
+        setshowMessage6(false)
+        // seterrMessage6("SC/PWD ID is empty.")
+      }
+    }
   }
 
   const addSalesCrew = (salescrewx: any) => {
@@ -1838,6 +1929,12 @@ export default function SalesOrder() {
     const finalArr = [...finalTotalList];
 
     console.log("xxx", finalArr)
+  }
+
+
+  const SCPWDinput = (id: any) => {
+    console.log("SC", id);
+    setscpdwdID(id);
   }
 
 
@@ -1970,6 +2067,16 @@ export default function SalesOrder() {
                 <input type="text" readOnly/>
               </div>
             </div>
+            {
+              showSCPDW && (
+                <div className="grid grid-cols-2">
+                  <label className="" htmlFor="entrynumber">SC/PWD ID</label>
+                  <div>
+                    <input onInput={(e)=>{SCPWDinput(e.target.value)}} type="text"/>
+                  </div>
+                </div>
+              )
+            }
           </div>
         </div>
         <div className="w-[] col1">
@@ -2270,7 +2377,13 @@ export default function SalesOrder() {
                     )
                   }
                 </td>
-                <td></td>
+                <td className={
+                    rowData.scPwdDiscount == "N" ? "bg-red-200" : "bg-green-200"
+                  }>
+                  {
+                    rowData.scPwdDiscount
+                  }
+                </td>
                 <td>
                   {
                     rowData.quantity == 0 ? '' : localCurrency.format(rowData.grossTotal)
@@ -2684,6 +2797,18 @@ export default function SalesOrder() {
                   <input value={totalBeforeVat} type="text" readOnly/>
                 </div>
               </div>
+              <div className="grid grid-cols-2">
+                <label htmlFor="documentnumber">SC/PWD Discount Total</label>
+                <div>
+                  <input value={SCPWDdata} type="text" readOnly/>
+                </div>
+              </div>
+              <div className="grid grid-cols-2">
+                <label htmlFor="documentnumber">Total Amount Due</label>
+                <div>
+                  <input value={totalAmoutDueData} type="text" readOnly/>
+                </div>
+              </div>
             </div>
         
           </div>
@@ -2730,6 +2855,22 @@ export default function SalesOrder() {
               <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
                 {
                   errMessage5
+                }
+              </div>
+            )
+          }
+          { showMessage6 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage6
+                }
+              </div>
+            )
+          }
+          { showMessage7 && (
+              <div className="p-2 mt-2 mb-1 mr-2 text-[12px] bg-red-200 shadow-md">
+                {
+                  errMessage7
                 }
               </div>
             )
